@@ -1,82 +1,45 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Realtime Chat (Firebase)</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Firebase Firestore Chat</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--muted:#97a0b3;--accent:#6ee7b7}
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
-    body{background:linear-gradient(180deg,#071129 0%, #0b1220 100%);display:flex;align-items:center;justify-content:center;padding:24px;color:#e6eef6}
-    .app{width:100%;max-width:820px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.7);overflow:hidden}
-    header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.03)}
-    header h1{font-size:18px;margin:0}
-    .main{display:grid;grid-template-columns:1fr 320px;min-height:480px}
-    .chat{padding:16px;display:flex;flex-direction:column;gap:12px;background:transparent}
-    .messages{flex:1;overflow:auto;padding-right:8px;display:flex;flex-direction:column;gap:8px}
-    .msg{max-width:72%;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);backdrop-filter:blur(2px)}
-    .msg.me{margin-left:auto;background:linear-gradient(90deg, rgba(110,231,183,0.12), rgba(110,231,183,0.06));border:1px solid rgba(110,231,183,0.07)}
-    .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .composer{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.02)}
-    input[type=text], textarea{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;color:inherit;outline:none}
-    textarea{resize:none;flex:1;min-height:48px}
-    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:#052016;font-weight:600;cursor:pointer}
-    aside{border-left:1px solid rgba(255,255,255,0.02);padding:16px;min-width:260px}
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-    .small{font-size:13px;color:var(--muted)}
-    footer{padding:10px 14px;font-size:12px;color:var(--muted);text-align:center;border-top:1px solid rgba(255,255,255,0.02)}
-    @media (max-width:900px){.main{grid-template-columns:1fr}.aside-hidden{display:none}}
+    body{margin:0;font-family:system-ui;background:#0f1724;color:#f0f4f9;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{background:#182235;padding:20px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.6);width:100%;max-width:420px}
+    input,button{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #334;outline:none}
+    button{background:#6ee7b7;color:#052016;font-weight:600;cursor:pointer}
+    #chat{display:none;flex-direction:column;height:80vh;width:100%;max-width:600px}
+    #messages{flex:1;overflow:auto;padding:10px;background:#0b1220;margin-bottom:10px;border-radius:8px}
+    .msg{margin:6px 0;padding:8px 12px;border-radius:8px;background:#24344a}
+    .me{background:#1a4731}
+    .meta{font-size:12px;color:#aaa;margin-bottom:4px}
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden><rect width="24" height="24" rx="6" fill="#052016"></rect><path d="M7 8h10M7 12h6" stroke="#6ee7b7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <h1>Realtime Chat (Firebase)</h1>
-    </header>
+  <div id="auth" class="card">
+    <h2>Login / Sign up</h2>
+    <input id="email" type="email" placeholder="Email"/>
+    <input id="password" type="password" placeholder="Password"/>
+    <button id="loginBtn">Login</button>
+    <button id="signupBtn">Sign Up</button>
+  </div>
 
-    <div class="main">
-      <section class="chat">
-        <div class="messages" id="messages"></div>
-
-        <div class="composer">
-          <input id="name" type="text" placeholder="Your name (eg. Alice)" style="width:160px" />
-          <textarea id="text" placeholder="Type a message and hit Enter..."></textarea>
-          <button id="send">Send</button>
-        </div>
-      </section>
-
-      <aside class="aside-hidden">
-        <div style="margin-bottom:14px">
-          <label>Realtime DB Path</label>
-          <div class="small">/messages</div>
-        </div>
-        <div style="margin-bottom:14px">
-          <label>How it works</label>
-          <div class="small">Messages are pushed to Firebase Realtime Database. All clients listen for new messages in real time.</div>
-        </div>
-        <div>
-          <label>Tips</label>
-          <ul class="small">
-            <li>Enable Realtime Database in your Firebase console.</li>
-            <li>For testing, set simple DB rules (see instructions below).</li>
-            <li>Serve this file over a local server (python -m http.server) for best results.</li>
-          </ul>
-        </div>
-      </aside>
-    </div>
-
-    <footer>
-      Note: Make sure your Firebase Realtime Database rules allow read/write for your use-case. Don't keep insecure rules in production.
-    </footer>
+  <div id="chat" class="card">
+    <h2>Firestore Chat</h2>
+    <div id="messages"></div>
+    <input id="msgInput" type="text" placeholder="Type a message..."/>
+    <button id="sendBtn">Send</button>
+    <button id="logoutBtn" style="margin-top:10px;background:#f87171;color:white">Logout</button>
   </div>
 
   <script type="module">
-    // --- Firebase SDK imports ---
+    // --- Firebase imports ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // --- Your firebase config (you provided this) ---
+    // --- Firebase config (use your own project config) ---
     const firebaseConfig = {
       apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
       authDomain: "chat-a9021.firebaseapp.com",
@@ -87,84 +50,76 @@
       measurementId: "G-SGTTS4W3E8"
     };
 
-    // Initialize Firebase
+    // --- Initialize Firebase ---
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // DOM
+    // --- DOM elements ---
+    const authDiv = document.getElementById('auth');
+    const chatDiv = document.getElementById('chat');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
     const messagesEl = document.getElementById('messages');
-    const nameEl = document.getElementById('name');
-    const textEl = document.getElementById('text');
-    const sendBtn = document.getElementById('send');
 
-    // The path we use 
-    const messagesRef = ref(db, 'messages');
+    // --- Auth handlers ---
+    signupBtn.onclick = () => {
+      createUserWithEmailAndPassword(auth, emailEl.value, passEl.value)
+        .catch(err => alert(err.message));
+    };
 
-    // Listen for new messages
-    onChildAdded(messagesRef, (snap) => {
-      const msg = snap.val();
-      if(!msg) return;
-      renderMessage(msg, snap.key);
-    });
+    loginBtn.onclick = () => {
+      signInWithEmailAndPassword(auth, emailEl.value, passEl.value)
+        .catch(err => alert(err.message));
+    };
 
-    // Send message
-    async function sendMessage(){
-      const name = (nameEl.value || 'Anonymous').trim();
-      const text = textEl.value.trim();
-      if(!text) return;
+    logoutBtn.onclick = () => signOut(auth);
 
-      const payload = { name, text, ts: serverTimestamp() };
-      await push(messagesRef, payload);
-
-      textEl.value = '';
-      textEl.focus();
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-
-    textEl.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        sendMessage();
+    // --- Auth state change ---
+    onAuthStateChanged(auth, user => {
+      if(user){
+        authDiv.style.display = "none";
+        chatDiv.style.display = "flex";
+        loadMessages(user);
+      } else {
+        chatDiv.style.display = "none";
+        authDiv.style.display = "block";
       }
     });
 
-    // Simple renderer
-    function renderMessage(msg, id){
-      const el = document.createElement('div');
-      el.className = 'msg' + (isMe(msg) ? ' me' : '');
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const time = msg.ts && msg.ts['.sv'] ? '' : '';
-      meta.textContent = `${escapeHtml(msg.name || 'Anonymous')}`;
-
-      const body = document.createElement('div');
-      body.textContent = msg.text || '';
-
-      el.appendChild(meta);
-      el.appendChild(body);
-
-      messagesEl.appendChild(el);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+    // --- Firestore messages ---
+    function loadMessages(user){
+      const q = query(collection(db,"messages"), orderBy("ts"));
+      onSnapshot(q, snapshot=>{
+        messagesEl.innerHTML="";
+        snapshot.forEach(doc=>{
+          const msg=doc.data();
+          const el=document.createElement("div");
+          el.className="msg" + (msg.uid===user.uid?" me":"");
+          el.innerHTML=`<div class="meta">${msg.email||'anon'}</div>${msg.text}`;
+          messagesEl.appendChild(el);
+        });
+        messagesEl.scrollTop=messagesEl.scrollHeight;
+      });
     }
 
-    // Utility: naive "is message from me" using name + local storage
-    function isMe(msg){
-      const myName = localStorage.getItem('chat_name') || '';
-      if(!myName && (nameEl.value || '').trim()) localStorage.setItem('chat_name', nameEl.value.trim());
-      if((nameEl.value || '').trim()) localStorage.setItem('chat_name', nameEl.value.trim());
-      return (msg.name||'') === (localStorage.getItem('chat_name')||'');
-    }
-
-    // Save name to localStorage on change
-    nameEl.addEventListener('change', () => localStorage.setItem('chat_name', (nameEl.value||'').trim()));
-
-    // Very small sanitizer
-    function escapeHtml(str){
-      return String(str).replace(/[&<>\"]/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\\':'\\\\','"':'&quot;'}[c]||c));
-    }
-
+    sendBtn.onclick = async ()=>{
+      const user = auth.currentUser;
+      const text = msgInput.value.trim();
+      if(!user || !text) return;
+      await addDoc(collection(db,"messages"),{
+        uid:user.uid,
+        email:user.email,
+        text,
+        ts:serverTimestamp()
+      });
+      msgInput.value="";
+    };
   </script>
 </body>
 </html>
