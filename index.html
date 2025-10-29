@@ -3,51 +3,183 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Firebase Firestore Chat</title>
+  <title>Firebase Chat — Rooms & Private</title>
   <style>
-    body{margin:0;font-family:system-ui;background:#0f1724;color:#f0f4f9;display:flex;align-items:center;justify-content:center;height:100vh}
-    .card{background:#182235;padding:20px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.6);width:100%;max-width:420px}
-    input,button{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #334;outline:none}
-    button{background:#6ee7b7;color:#052016;font-weight:600;cursor:pointer}
-    #chat{display:none;flex-direction:column;height:80vh;width:100%;max-width:600px}
-    #messages{flex:1;overflow:auto;padding:10px;background:#0b1220;margin-bottom:10px;border-radius:8px}
-    .msg{margin:6px 0;padding:8px 12px;border-radius:8px;background:#24344a}
-    .me{background:#1a4731}
-    .meta{font-size:12px;color:#aaa;margin-bottom:4px}
+    :root{
+      --bg:#0b1220;--card:#0f1724;--muted:#9aa4b2;--accent:#6ee7b7;--danger:#f87171;
+      --panel:#182235;--msg:#24344a;--me:#1a4731;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      background:linear-gradient(180deg,#061025 0%, #071827 100%); color:#eef2f7;
+      display:flex;align-items:stretch;justify-content:center;padding:12px;
+    }
+
+    /* App container */
+    .app{
+      width:100%; max-width:1100px; height:100vh; display:grid;
+      grid-template-columns:320px 1fr; gap:12px;
+    }
+
+    /* Mobile adjustments: collapse to single column */
+    @media (max-width:800px){
+      .app{grid-template-columns:1fr; height:100vh}
+      .sidebar{position:fixed;left:0;top:0;bottom:0;width:78%;max-width:320px;z-index:20;
+               transform:translateX(-110%);transition:transform .22s ease}
+      .sidebar.open{transform:translateX(0)}
+      .overlay{display:block}
+    }
+
+    .card{
+      background:var(--panel); padding:14px; border-radius:12px; box-shadow:0 10px 30px rgba(2,6,23,0.6);
+    }
+
+    /* Sidebar */
+    .sidebar{display:flex;flex-direction:column;gap:12px;height:calc(100vh - 24px); overflow:auto}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand h1{font-size:18px;margin:0}
+    .user-info{display:flex;gap:10px;align-items:center}
+    .avatar{width:44px;height:44px;border-radius:10px;background:#0f1724;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* Chat type buttons */
+    .types{display:flex;gap:8px;flex-wrap:wrap}
+    .type-btn{padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.04);background:transparent;cursor:pointer;font-weight:600}
+    .type-btn.active{background:linear-gradient(90deg,#16394a,#1f4d67);color:var(--accent);box-shadow:0 6px 18px rgba(2,6,23,.5)}
+
+    /* Users list */
+    .users{display:flex;flex-direction:column;gap:8px}
+    .user-row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(255,255,255,.02);cursor:pointer}
+    .user-row:hover{background:rgba(255,255,255,.03)}
+
+    /* Chat area */
+    .chat-area{display:flex;flex-direction:column;height:calc(100vh - 24px)}
+    .chat-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px}
+    .messages{flex:1;overflow:auto;padding:14px;border-radius:10px;background:#071025;margin-bottom:10px}
+    .msg{max-width:78%;margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--msg);position:relative}
+    .msg.me{margin-left:auto;background:var(--me)}
+    .msg .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .msg .time{font-size:11px;color:var(--muted);position:absolute;right:8px;bottom:6px}
+    .msg .actions{position:absolute;left:8px;top:8px;display:flex;gap:6px}
+    .msg.me .actions{left:8px}
+    .delete-btn{background:transparent;border:0;color:var(--danger);cursor:pointer;font-weight:700}
+
+    /* Input area */
+    .composer{display:flex;gap:8px}
+    .composer input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.04);outline:none;background:transparent;color:inherit}
+    .composer button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#053022;font-weight:700;cursor:pointer}
+
+    /* Auth card centered for small screens */
+    .auth-full{max-width:420px;margin:auto;margin-top:20vh}
+
+    /* overlay for mobile sidebar */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10}
+    .small-muted{font-size:12px;color:var(--muted)}
+    .logout{background:var(--danger);color:white;padding:8px;border-radius:8px;border:0;cursor:pointer}
   </style>
 </head>
 <body>
-  <div id="auth" class="card">
-    <h2>Login / Sign up</h2>
-    <input id="email" type="email" placeholder="Email"/>
-    <input id="password" type="password" placeholder="Password"/>
-    <button id="loginBtn">Login</button>
-    <button id="signupBtn">Sign Up</button>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <div class="card sidebar" id="sidebar">
+      <div class="brand">
+        <div style="display:flex;flex-direction:column">
+          <h1>FireChat</h1>
+          <div class="small-muted">Rooms & Private Chats</div>
+        </div>
+        <div style="margin-left:auto">
+          <button id="toggleSidebarBtn" style="display:none">☰</button>
+        </div>
+      </div>
+
+      <!-- Auth area -->
+      <div id="authCard" class="auth-full">
+        <h3 style="margin:4px 0 8px 0">Login / Sign up</h3>
+        <input id="email" type="email" placeholder="Email" style="width:100%;padding:8px;border-radius:8px;margin-bottom:8px"/>
+        <input id="password" type="password" placeholder="Password" style="width:100%;padding:8px;border-radius:8px;margin-bottom:8px"/>
+        <input id="displayName" type="text" placeholder="Display name (optional)" style="width:100%;padding:8px;border-radius:8px;margin-bottom:8px"/>
+        <div style="display:flex;gap:8px">
+          <button id="loginBtn" style="flex:1;padding:10px;border-radius:8px">Login</button>
+          <button id="signupBtn" style="flex:1;padding:10px;border-radius:8px">Sign Up</button>
+        </div>
+      </div>
+
+      <!-- User info shown when logged in -->
+      <div id="userPanel" style="display:none;flex-direction:column;gap:10px">
+        <div class="user-info">
+          <div class="avatar" id="meAvatar">U</div>
+          <div style="flex:1">
+            <div id="meName" style="font-weight:700">You</div>
+            <div class="small" id="meEmail">email</div>
+          </div>
+          <button id="signoutBtn" class="logout">Logout</button>
+        </div>
+
+        <div>
+          <div class="small-muted">Choose a room</div>
+          <div class="types" id="types"></div>
+        </div>
+
+        <div>
+          <div class="small-muted" style="margin-bottom:6px">Online users</div>
+          <div class="users" id="usersList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="card chat-area" id="chatCard">
+      <div class="chat-header">
+        <div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="openSidebar" style="display:none">☰</button>
+            <div id="chatTitle" style="font-weight:700">Select a room</div>
+            <div style="margin-left:8px" class="small-muted" id="chatSub">Public room</div>
+          </div>
+        </div>
+        <div class="small-muted" id="chatMeta"> </div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+
+      <div style="display:flex;flex-direction:column">
+        <div class="composer">
+          <input id="msgInput" placeholder="Type message and press Enter..." />
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="chat" class="card">
-    <h2>Firestore Chat</h2>
-    <div id="messages"></div>
-    <input id="msgInput" type="text" placeholder="Type a message..."/>
-    <button id="sendBtn">Send</button>
-    <button id="logoutBtn" style="margin-top:10px;background:#f87171;color:white">Logout</button>
-  </div>
+  <div class="overlay" id="overlay"></div>
 
+  <!-- Firebase + App Logic -->
   <script type="module">
     // --- Firebase imports ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-    // --- Firebase config (use your own project config) ---
+    import {
+      getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+      doc, setDoc, getDocs, where, deleteDoc, getDoc, updateDoc, limit
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+    // --- YOUR FIREBASE CONFIG (PUT YOURS HERE) ---
     const firebaseConfig = {
-      apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
-      authDomain: "chat-a9021.firebaseapp.com",
-      projectId: "chat-a9021",
-      storageBucket: "chat-a9021.firebasestorage.app",
-      messagingSenderId: "910705138024",
-      appId: "1:910705138024:web:8bbf2dd7840b6e28015edd",
-      measurementId: "G-SGTTS4W3E8"
+      apiKey: "REPLACE_WITH_YOURS",
+      authDomain: "REPLACE_WITH_YOURS",
+      projectId: "REPLACE_WITH_YOURS",
+      // ...other fields
     };
 
     // --- Initialize Firebase ---
@@ -56,70 +188,323 @@
     const db = getFirestore(app);
 
     // --- DOM elements ---
-    const authDiv = document.getElementById('auth');
-    const chatDiv = document.getElementById('chat');
+    const authCard = document.getElementById('authCard');
+    const userPanel = document.getElementById('userPanel');
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
+    const displayNameEl = document.getElementById('displayName');
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+    const signoutBtn = document.getElementById('signoutBtn');
+
+    const typesEl = document.getElementById('types');
+    const usersListEl = document.getElementById('usersList');
+
+    const chatTitle = document.getElementById('chatTitle');
+    const chatSub = document.getElementById('chatSub');
+    const messagesEl = document.getElementById('messages');
     const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
-    const messagesEl = document.getElementById('messages');
 
-    // --- Auth handlers ---
-    signupBtn.onclick = () => {
-      createUserWithEmailAndPassword(auth, emailEl.value, passEl.value)
-        .catch(err => alert(err.message));
-    };
+    const meAvatar = document.getElementById('meAvatar');
+    const meName = document.getElementById('meName');
+    const meEmail = document.getElementById('meEmail');
 
-    loginBtn.onclick = () => {
-      signInWithEmailAndPassword(auth, emailEl.value, passEl.value)
-        .catch(err => alert(err.message));
-    };
+    const sidebar = document.getElementById('sidebar');
+    const openSidebarBtn = document.getElementById('openSidebar');
+    const overlay = document.getElementById('overlay');
 
-    logoutBtn.onclick = () => signOut(auth);
+    // --- App state ---
+    const roomTypes = ['General','Pokémon','Comics','Tech','Random'];
+    let currentUser = null;
+    let currentChat = { type: 'room', id: 'General' }; // {type: 'room'|'private', id: chatId}
+    let unsubscribeMessages = null;
 
-    // --- Auth state change ---
-    onAuthStateChanged(auth, user => {
-      if(user){
-        authDiv.style.display = "none";
-        chatDiv.style.display = "flex";
-        loadMessages(user);
-      } else {
-        chatDiv.style.display = "none";
-        authDiv.style.display = "block";
-      }
-    });
+    // --- Utilities ---
+    function uidPair(a,b){
+      // deterministic pair string for private chat: smallerUID_biggestUID
+      return (a < b) ? `${a}_${b}` : `${b}_${a}`;
+    }
 
-    // --- Firestore messages ---
-    function loadMessages(user){
-      const q = query(collection(db,"messages"), orderBy("ts"));
-      onSnapshot(q, snapshot=>{
-        messagesEl.innerHTML="";
-        snapshot.forEach(doc=>{
-          const msg=doc.data();
-          const el=document.createElement("div");
-          el.className="msg" + (msg.uid===user.uid?" me":"");
-          el.innerHTML=`<div class="meta">${msg.email||'anon'}</div>${msg.text}`;
-          messagesEl.appendChild(el);
-        });
-        messagesEl.scrollTop=messagesEl.scrollHeight;
+    function fmtTime(ts){
+      if(!ts) return '';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+
+    // --- Build types UI ---
+    function renderTypes(){
+      typesEl.innerHTML='';
+      roomTypes.forEach(t=>{
+        const b = document.createElement('button');
+        b.className='type-btn' + (currentChat.type === 'room' && currentChat.id === t ? ' active':'');
+        b.textContent = t;
+        b.onclick = ()=> openRoom(t);
+        typesEl.appendChild(b);
       });
     }
 
-    sendBtn.onclick = async ()=>{
-      const user = auth.currentUser;
-      const text = msgInput.value.trim();
-      if(!user || !text) return;
-      await addDoc(collection(db,"messages"),{
-        uid:user.uid,
-        email:user.email,
-        text,
-        ts:serverTimestamp()
+    // --- Open a room chat ---
+    function openRoom(type){
+      if(unsubscribeMessages) unsubscribeMessages();
+      currentChat = { type:'room', id: type };
+      chatTitle.textContent = type;
+      chatSub.textContent = 'Public room';
+      renderTypes();
+      listenToRoom(type);
+      closeSidebarOnMobile();
+    }
+
+    // --- Open a private chat with user object ---
+    function openPrivateChat(userObj){
+      if(!currentUser) return alert('Login first');
+      if(userObj.uid === currentUser.uid) return alert('That is you!');
+      const chatId = uidPair(currentUser.uid, userObj.uid);
+      if(unsubscribeMessages) unsubscribeMessages();
+      currentChat = { type:'private', id: chatId, with: userObj };
+      chatTitle.textContent = userObj.displayName || userObj.email || 'Private';
+      chatSub.textContent = `Private with ${userObj.displayName || userObj.email}`;
+      renderTypes();
+      listenToPrivate(chatId);
+      closeSidebarOnMobile();
+    }
+
+    // --- Listen to room messages ---
+    function listenToRoom(room){
+      messagesEl.innerHTML = '<div class="small-muted">Loading messages…</div>';
+      const colRef = collection(db, 'chats', room, 'messages');
+      const q = query(colRef, orderBy('ts'));
+      unsubscribeMessages = onSnapshot(q, snapshot=>{
+        renderMessages(snapshot.docs);
       });
-      msgInput.value="";
+    }
+
+    // --- Listen to private messages ---
+    function listenToPrivate(chatId){
+      messagesEl.innerHTML = '<div class="small-muted">Loading messages…</div>';
+      const colRef = collection(db, 'private', chatId, 'messages');
+      const q = query(colRef, orderBy('ts'));
+      unsubscribeMessages = onSnapshot(q, snapshot=>{
+        renderMessages(snapshot.docs);
+      });
+    }
+
+    // --- Render message docs ---
+    function renderMessages(docs){
+      messagesEl.innerHTML = '';
+      docs.forEach(d=>{
+        const m = d.data();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg' + (m.uid === currentUser?.uid ? ' me' : '');
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = m.displayName || m.email || 'anon';
+        const text = document.createElement('div');
+        text.innerHTML = escapeHtml(m.text || '');
+        const time = document.createElement('div');
+        time.className = 'time';
+        time.textContent = fmtTime(m.ts);
+        wrapper.appendChild(meta);
+        wrapper.appendChild(text);
+        wrapper.appendChild(time);
+
+        // actions (delete) if this is your message
+        if(m.uid === currentUser?.uid){
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const del = document.createElement('button');
+          del.className = 'delete-btn';
+          del.textContent = 'Delete';
+          del.onclick = ()=> deleteMessage(d.id);
+          actions.appendChild(del);
+          wrapper.appendChild(actions);
+        }
+
+        messagesEl.appendChild(wrapper);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // --- Escape HTML to avoid XSS ---
+    function escapeHtml(s){
+      if(!s) return '';
+      return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    // --- Send message ---
+    async function sendMessage(){
+      const text = msgInput.value.trim();
+      if(!currentUser) return alert('Please login to send messages.');
+      if(!text) return;
+      let path;
+      if(currentChat.type === 'room'){
+        path = ['chats', currentChat.id, 'messages'];
+      } else {
+        path = ['private', currentChat.id, 'messages'];
+      }
+      const collectionRef = collection(db, ...path);
+      await addDoc(collectionRef, {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
+        text,
+        ts: serverTimestamp()
+      });
+      msgInput.value = '';
+    }
+
+    // --- Delete a message doc (only allowed client-side if you own it) ---
+    async function deleteMessage(docId){
+      if(!currentUser) return;
+      const path = (currentChat.type === 'room') ? doc(db, 'chats', currentChat.id, 'messages', docId) :
+                    doc(db, 'private', currentChat.id, 'messages', docId);
+      try{
+        // optional: confirm
+        if(!confirm('Delete this message?')) return;
+        await deleteDoc(path);
+      } catch(err){
+        alert('Delete failed: ' + err.message);
+      }
+    }
+
+    // --- Auth handlers ---
+    signupBtn.onclick = async ()=>{
+      const email = emailEl.value.trim();
+      const pass = passEl.value;
+      const displayName = displayNameEl.value.trim();
+      if(!email || !pass) return alert('Email and password required');
+      try{
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        // update displayName
+        if(displayName) await updateProfile(cred.user, { displayName });
+        // create users doc
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          email: cred.user.email,
+          displayName: displayName || cred.user.email,
+          lastSeen: serverTimestamp()
+        });
+      } catch(err){
+        alert(err.message);
+      }
     };
+
+    loginBtn.onclick = async ()=>{
+      const email = emailEl.value.trim();
+      const pass = passEl.value;
+      if(!email || !pass) return alert('Email and password required');
+      try{
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        // update presence doc
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          email: cred.user.email,
+          displayName: cred.user.displayName || email,
+          lastSeen: serverTimestamp()
+        }, { merge: true });
+      } catch(err){
+        alert(err.message);
+      }
+    };
+
+    signoutBtn.onclick = ()=> signOut(auth);
+
+    // --- On auth change ---
+    onAuthStateChanged(auth, async user=>{
+      currentUser = user;
+      if(user){
+        // show user panel
+        authCard.style.display = 'none';
+        userPanel.style.display = 'flex';
+        meAvatar.textContent = (user.displayName || user.email || 'U').slice(0,1).toUpperCase();
+        meName.textContent = user.displayName || 'You';
+        meEmail.textContent = user.email;
+        // ensure user doc exists
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || displayNameEl.value || user.email,
+          lastSeen: serverTimestamp()
+        }, { merge: true });
+        renderUsers();
+        // open default room
+        openRoom(currentChat.id || 'General');
+      } else {
+        authCard.style.display = 'block';
+        userPanel.style.display = 'none';
+        messagesEl.innerHTML = '<div class="small-muted">Please login to see chats</div>';
+        currentUser = null;
+        if(unsubscribeMessages) unsubscribeMessages();
+      }
+    });
+
+    // --- Render users list (click to start private chat) ---
+    async function renderUsers(){
+      usersListEl.innerHTML = '<div class="small-muted">Loading users…</div>';
+      try{
+        const q = query(collection(db,'users'), orderBy('displayName'), limit(100));
+        const snap = await getDocs(q);
+        usersListEl.innerHTML = '';
+        snap.forEach(d=>{
+          const u = d.data();
+          const row = document.createElement('div');
+          row.className = 'user-row';
+          const left = document.createElement('div');
+          left.style.display='flex';left.style.alignItems='center';left.style.gap='10px';
+          const av = document.createElement('div'); av.className='avatar'; av.textContent = (u.displayName||u.email||'U').slice(0,1).toUpperCase();
+          const info = document.createElement('div'); info.style.flex='1';
+          const name = document.createElement('div'); name.textContent = u.displayName || u.email;
+          const small = document.createElement('div'); small.className='small-muted'; small.textContent = u.email;
+          info.appendChild(name); info.appendChild(small);
+          left.appendChild(av); left.appendChild(info);
+          const btn = document.createElement('button'); btn.textContent = 'Chat';
+          btn.onclick = ()=> openPrivateChat(u);
+          row.appendChild(left); row.appendChild(btn);
+          usersListEl.appendChild(row);
+        });
+      } catch(err){
+        usersListEl.innerHTML = '<div class="small-muted">Failed to load users</div>';
+      }
+    }
+
+    // --- UI: send on Enter ---
+    msgInput.addEventListener('keypress', (e)=> {
+      if(e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+    });
+    sendBtn.onclick = sendMessage;
+
+    // --- Sidebar toggle for mobile ---
+    function closeSidebarOnMobile(){
+      if(window.innerWidth <= 800){
+        sidebar.classList.remove('open');
+        overlay.style.display='none';
+      }
+    }
+    document.getElementById('openSidebar').onclick = ()=>{ sidebar.classList.add('open'); overlay.style.display='block'; };
+    overlay.onclick = ()=>{ sidebar.classList.remove('open'); overlay.style.display='none'; };
+
+    // Show open sidebar button only on small screens
+    function adjustLayout(){
+      const openBtn = document.getElementById('openSidebar');
+      if(window.innerWidth <= 800){
+        openBtn.style.display='inline-block';
+        document.getElementById('toggleSidebarBtn').style.display='inline-block';
+      } else {
+        openBtn.style.display='none';
+        document.getElementById('toggleSidebarBtn').style.display='none';
+        sidebar.classList.remove('open');
+        overlay.style.display='none';
+      }
+    }
+    window.addEventListener('resize', adjustLayout);
+    adjustLayout();
+
+    // --- Init UI ---
+    renderTypes();
+
+    // Optional: auto-select General room on load (if not logged in, will be loaded on auth)
+    openRoom('General');
+
   </script>
 </body>
 </html>
