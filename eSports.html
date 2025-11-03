@@ -1,121 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>College eSports Registration Data</title>
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: #e0e0e0;
-      font-family: 'Poppins', sans-serif;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #39ff14;
-      text-shadow: 0 0 8px #39ff14;
-      margin-bottom: 20px;
-      font-size: 2em;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      box-shadow: 0 0 10px #00ff99;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-    }
-
-    th {
-      background: #1a1a1a;
-      color: #00ffcc;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    tr:nth-child(even) {
-      background: #111111;
-    }
-
-    tr:hover {
-      background: #1f1f1f;
-      box-shadow: 0 0 10px #00ffcc;
-      transition: 0.3s;
-    }
-
-    #dataTable {
-      border: 2px solid #00ffcc;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>College eSports Tournament Dashboard</title>
+<style>
+  body {
+    background:#0d0d0d;
+    color:#e0e0e0;
+    font-family:"Poppins",sans-serif;
+    padding:20px;
+    text-align:center;
+  }
+  h1{color:#39ff14;text-shadow:0 0 10px #39ff14;}
+  button{
+    background:#39ff14;
+    color:#000;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    margin:10px;
+  }
+  table{width:100%;border-collapse:collapse;margin-top:20px;}
+  th,td{padding:10px;border-bottom:1px solid #222;}
+  th{background:#1a1a1a;color:#00ffcc;}
+  tr:hover{background:#1f1f1f;}
+  .winner{background:#00ffcc;color:#000 !important;}
+  .bracket{display:flex;flex-wrap:wrap;justify-content:center;margin-top:30px;}
+  .player{
+    background:#1a1a1a;
+    border:1px solid #00ffcc;
+    padding:10px 20px;
+    margin:5px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:.3s;
+  }
+  .player:hover{background:#00ffcc;color:#000;}
+  .hidden{display:none;}
+  #finalWinner{font-size:1.8em;color:#39ff14;text-shadow:0 0 10px #39ff14;}
+</style>
 </head>
 <body>
-  <h1>College eSports Registration Data</h1>
+<h1>🎮 College eSports Tournament Dashboard</h1>
 
-  <table id="dataTable">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Name</th>
-        <th>Class</th>
-        <th>Semester</th>
-        <th>Competition</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Sheet data will appear here -->
-    </tbody>
-  </table>
+<button id="loadBtn">Load Registered Players</button>
+<button id="startBtn" class="hidden">Start Tournament</button>
 
-  <script>
-    // === CONFIGURATION ===
-    const spreadsheetId = '1wPoLkYzRMjpUkOOjn8JFbYzHUx2dB3f539QD7hDcEbg'; // your sheet ID
-    const apiKey = 'AIzaSyA4UUq-PYSr4BQlgjy8g9qCax52bjJymA0'; // <== Replace with your actual API key
-    const sheetName = 'Form Responses 1'; // <== Update if your tab name is different
+<table id="dataTable" class="hidden">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Class</th>
+      <th>Semester</th>
+      <th>Competition</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
+<div id="rounds" class="hidden">
+  <h2>⚔️ Stumble Guys – Round Selection</h2>
+  <p>Select 8 winners who advance to the Fighter Legend Duo finals.</p>
+  <div id="roundPlayers" class="bracket"></div>
+</div>
 
-    async function loadSheetData() {
-      try {
-        const response = await fetch(url);
-        const result = await response.json();
-        const rows = result.values;
+<div id="finals" class="hidden">
+  <h2>🏆 Fighter Legend Duo – Final Stage (1 v 1)</h2>
+  <div id="finalPlayers" class="bracket"></div>
+  <div id="finalWinner" class="hidden"></div>
+</div>
 
-        const tbody = document.querySelector('#dataTable tbody');
-        tbody.innerHTML = '';
+<script>
+const spreadsheetId = '1wPoLkYzRMjpUkOOjn8JFbYzHUx2dB3f539QD7hDcEbg';
+const apiKey = 'AIzaSyA4UUq-PYSr4BQlgjy8g9qCax52bjJymA0';
+const sheetName = 'Form Responses 1';
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
 
-        if (!rows || rows.length < 2) {
-          tbody.innerHTML = '<tr><td colspan="5">No data found</td></tr>';
-          return;
-        }
+const loadBtn=document.getElementById('loadBtn');
+const startBtn=document.getElementById('startBtn');
+const table=document.getElementById('dataTable');
+const tbody=table.querySelector('tbody');
+const rounds=document.getElementById('rounds');
+const roundPlayers=document.getElementById('roundPlayers');
+const finals=document.getElementById('finals');
+const finalPlayers=document.getElementById('finalPlayers');
+const finalWinner=document.getElementById('finalWinner');
 
-        // Skip header row (rows[0])
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          const tr = document.createElement('tr');
+let players=[];
+let finalists=[];
 
-          // Add cells
-          for (let j = 0; j < 5; j++) {
-            const td = document.createElement('td');
-            td.textContent = row[j] || '-';
-            tr.appendChild(td);
-          }
-          tbody.appendChild(tr);
-        }
-      } catch (err) {
-        console.error('Error loading data:', err);
-        document.querySelector('#dataTable tbody').innerHTML =
-          '<tr><td colspan="5">Error loading data. Check API key or sharing settings.</td></tr>';
+async function loadSheetData(){
+  try{
+    const response=await fetch(url);
+    const result=await response.json();
+    const rows=result.values;
+    tbody.innerHTML='';
+    players=[];
+    if(!rows||rows.length<2)return;
+    for(let i=1;i<rows.length;i++){
+      const row=rows[i];
+      const competition=(row[4]||'').toLowerCase();
+      if(competition.includes('e-sport')){ // only show e-sports players
+        players.push({name:row[1],class:row[2],sem:row[3],comp:row[4]});
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>`;
+        tbody.appendChild(tr);
       }
     }
+    table.classList.remove('hidden');
+    startBtn.classList.remove('hidden');
+  }catch(err){
+    alert("Error loading sheet. Check API key or sharing settings.");
+    console.error(err);
+  }
+}
 
-    document.addEventListener('DOMContentLoaded', loadSheetData);
-  </script>
+function startTournament(){
+  loadBtn.classList.add('hidden');
+  startBtn.classList.add('hidden');
+  table.classList.add('hidden');
+  rounds.classList.remove('hidden');
+  renderPlayers(players);
+}
+
+function renderPlayers(list){
+  roundPlayers.innerHTML='';
+  list.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='player';
+    div.textContent=p.name;
+    div.addEventListener('click',()=>selectWinner(div,p));
+    roundPlayers.appendChild(div);
+  });
+}
+
+function selectWinner(div,player){
+  if(div.classList.contains('winner'))return;
+  div.classList.add('winner');
+  finalists.push(player);
+  if(finalists.length===8){
+    rounds.classList.add('hidden');
+    startFinals();
+  }
+}
+
+function startFinals(){
+  finals.classList.remove('hidden');
+  finalPlayers.innerHTML='';
+  finalists.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='player';
+    div.textContent=p.name;
+    div.addEventListener('click',()=>pickChampion(div,p));
+    finalPlayers.appendChild(div);
+  });
+}
+
+function pickChampion(div,p){
+  document.querySelectorAll('#finalPlayers .player').forEach(el=>el.classList.remove('winner'));
+  div.classList.add('winner');
+  finalWinner.textContent=`🏆 Final Winner: ${p.name}`;
+  finalWinner.classList.remove('hidden');
+}
+
+loadBtn.addEventListener('click',loadSheetData);
+startBtn.addEventListener('click',startTournament);
+</script>
 </body>
 </html>
