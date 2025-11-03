@@ -26,6 +26,15 @@
   th,td{padding:10px;border-bottom:1px solid #222;}
   th{background:#1a1a1a;color:#00ffcc;}
   tr:hover{background:#1f1f1f;}
+  input[type=text]{
+    background:#111;
+    color:#00ffcc;
+    border:1px solid #00ffcc;
+    border-radius:6px;
+    padding:4px 8px;
+    width:120px;
+    text-align:center;
+  }
   .winner{background:#00ffcc;color:#000 !important;}
   .bracket{display:flex;flex-wrap:wrap;justify-content:center;margin-top:30px;}
   .player{
@@ -46,12 +55,14 @@
 <h1>🎮 College eSports Tournament Dashboard</h1>
 
 <button id="loadBtn">Load Registered Players</button>
+<button id="randomBtn" class="hidden">Assign Random Names</button>
 <button id="startBtn" class="hidden">Start Tournament</button>
 
 <table id="dataTable" class="hidden">
   <thead>
     <tr>
-      <th>Name</th>
+      <th>Game Name</th>
+      <th>Real Name</th>
       <th>Class</th>
       <th>Semester</th>
       <th>Competition</th>
@@ -79,6 +90,7 @@ const sheetName = 'Form Responses 1';
 const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
 
 const loadBtn=document.getElementById('loadBtn');
+const randomBtn=document.getElementById('randomBtn');
 const startBtn=document.getElementById('startBtn');
 const table=document.getElementById('dataTable');
 const tbody=table.querySelector('tbody');
@@ -102,14 +114,22 @@ async function loadSheetData(){
     for(let i=1;i<rows.length;i++){
       const row=rows[i];
       const competition=(row[4]||'').toLowerCase();
-      if(true){ // only show e-sports players
-        players.push({name:row[1],class:row[2],sem:row[3],comp:row[4]});
+      if(competition.includes('e-sport')){
+        const player={name:row[1],class:row[2],sem:row[3],comp:row[4],gameName:''};
+        players.push(player);
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>`;
+        tr.innerHTML=`
+          <td><input type="text" placeholder="Game name" /></td>
+          <td>${player.name}</td>
+          <td>${player.class}</td>
+          <td>${player.sem}</td>
+          <td>${player.comp}</td>
+        `;
         tbody.appendChild(tr);
       }
     }
     table.classList.remove('hidden');
+    randomBtn.classList.remove('hidden');
     startBtn.classList.remove('hidden');
   }catch(err){
     alert("Error loading sheet. Check API key or sharing settings.");
@@ -117,8 +137,24 @@ async function loadSheetData(){
   }
 }
 
+function assignRandomNames(){
+  const nameList=["DarkNinja","BlazeX","FrostByte","NeoStrike","Viper","SkullShot",
+  "VenomX","RapidFire","StormRider","RogueWolf","IronBlade","ShadowZ","HexCore","NightFury","CrimsonGhost"];
+  const inputs=document.querySelectorAll('#dataTable tbody input');
+  inputs.forEach((inp,i)=>{
+    const nick=nameList[i%nameList.length]+Math.floor(Math.random()*999);
+    inp.value=nick;
+    players[i].gameName=nick;
+  });
+}
+
 function startTournament(){
+  // get updated names from inputs
+  const inputs=document.querySelectorAll('#dataTable tbody input');
+  inputs.forEach((inp,i)=>players[i].gameName=inp.value||players[i].name);
+
   loadBtn.classList.add('hidden');
+  randomBtn.classList.add('hidden');
   startBtn.classList.add('hidden');
   table.classList.add('hidden');
   rounds.classList.remove('hidden');
@@ -130,7 +166,7 @@ function renderPlayers(list){
   list.forEach(p=>{
     const div=document.createElement('div');
     div.className='player';
-    div.textContent=p.name;
+    div.textContent=p.gameName || p.name;
     div.addEventListener('click',()=>selectWinner(div,p));
     roundPlayers.appendChild(div);
   });
@@ -152,7 +188,7 @@ function startFinals(){
   finalists.forEach(p=>{
     const div=document.createElement('div');
     div.className='player';
-    div.textContent=p.name;
+    div.textContent=p.gameName || p.name;
     div.addEventListener('click',()=>pickChampion(div,p));
     finalPlayers.appendChild(div);
   });
@@ -161,11 +197,12 @@ function startFinals(){
 function pickChampion(div,p){
   document.querySelectorAll('#finalPlayers .player').forEach(el=>el.classList.remove('winner'));
   div.classList.add('winner');
-  finalWinner.textContent=`🏆 Final Winner: ${p.name}`;
+  finalWinner.textContent=`🏆 Final Winner: ${p.gameName || p.name}`;
   finalWinner.classList.remove('hidden');
 }
 
 loadBtn.addEventListener('click',loadSheetData);
+randomBtn.addEventListener('click',assignRandomNames);
 startBtn.addEventListener('click',startTournament);
 </script>
 </body>
