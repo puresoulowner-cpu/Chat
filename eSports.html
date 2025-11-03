@@ -114,7 +114,7 @@ async function loadSheetData(){
     for(let i=1;i<rows.length;i++){
       const row=rows[i];
       const competition=(row[4]||'').toLowerCase();
-      if(competition.includes('e-sport')){
+      if(true){
         const player={name:row[1],class:row[2],sem:row[3],comp:row[4],gameName:''};
         players.push(player);
         const tr=document.createElement('tr');
