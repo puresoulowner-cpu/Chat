@@ -189,7 +189,7 @@ function startFinals(){
   finalists.forEach(p=>{
     const div=document.createElement('div');
     div.className='player';
-    div.textContent=p.gameName || p.name;
+    div.innerHTML = `<span class="tag">${p.gameName || p.name}</span> <span class="realname">#${p.name}</span>`;
     div.addEventListener('click',()=>pickChampion(div,p));
     finalPlayers.appendChild(div);
   });
