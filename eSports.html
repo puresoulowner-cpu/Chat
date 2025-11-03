@@ -2,45 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>College e-Sports Registration</title>
+  <title>College eSports Registration Data</title>
   <style>
     body {
-      background: #121212;
+      background-color: #0d0d0d;
       color: #e0e0e0;
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', sans-serif;
       padding: 20px;
     }
+
     h1 {
       text-align: center;
       color: #39ff14;
+      text-shadow: 0 0 8px #39ff14;
       margin-bottom: 20px;
+      font-size: 2em;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: auto;
+      margin-top: 10px;
+      box-shadow: 0 0 10px #00ff99;
+      border-radius: 10px;
+      overflow: hidden;
     }
+
     th, td {
       padding: 12px 15px;
       text-align: left;
     }
+
     th {
-      background: #1f1f1f;
-      color: #39ff14;
-    }
-    tr:nth-child(even) {
       background: #1a1a1a;
+      color: #00ffcc;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
+
+    tr:nth-child(even) {
+      background: #111111;
+    }
+
     tr:hover {
-      background: #272727;
+      background: #1f1f1f;
+      box-shadow: 0 0 10px #00ffcc;
+      transition: 0.3s;
+    }
+
+    #dataTable {
+      border: 2px solid #00ffcc;
     }
   </style>
 </head>
 <body>
-  <h1>Registration for Competitions</h1>
+  <h1>College eSports Registration Data</h1>
+
   <table id="dataTable">
     <thead>
       <tr>
+        <th>Timestamp</th>
         <th>Name</th>
         <th>Class</th>
         <th>Semester</th>
@@ -48,14 +69,15 @@
       </tr>
     </thead>
     <tbody>
-      <!-- Data will be inserted here -->
+      <!-- Sheet data will appear here -->
     </tbody>
   </table>
 
   <script>
-    const spreadsheetId = '1wPoLkYzRMjpUkOOjn8JFbYzHUx2dB3f539QD7hDcEbg';
-    const apiKey = 'AIzaSyA4UUq-PYSr4BQlgjy8g9qCax52bjJymA0';  // <== Replace with your actual API key
-    const sheetName = 'Form Responses 1';         // <== Update if your tab name is different
+    // === CONFIGURATION ===
+    const spreadsheetId = '1wPoLkYzRMjpUkOOjn8JFbYzHUx2dB3f539QD7hDcEbg'; // your sheet ID
+    const apiKey = 'AIzaSyA4UUq-PYSr4BQlgjy8g9qCax52bjJymA0'; // <== Replace with your actual API key
+    const sheetName = 'Form Responses 1'; // <== Update if your tab name is different
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
 
@@ -64,26 +86,32 @@
         const response = await fetch(url);
         const result = await response.json();
         const rows = result.values;
+
         const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+
         if (!rows || rows.length < 2) {
-          tbody.innerHTML = '<tr><td colspan="4">No data found</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5">No data found</td></tr>';
           return;
         }
-        // Remove header row from rows[0]
+
+        // Skip header row (rows[0])
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
           const tr = document.createElement('tr');
-          row.forEach(cell => {
+
+          // Add cells
+          for (let j = 0; j < 5; j++) {
             const td = document.createElement('td');
-            td.textContent = cell || '';
+            td.textContent = row[j] || '-';
             tr.appendChild(td);
-          });
+          }
           tbody.appendChild(tr);
         }
       } catch (err) {
-        console.error('Error loading sheet data:', err);
+        console.error('Error loading data:', err);
         document.querySelector('#dataTable tbody').innerHTML =
-          '<tr><td colspan="4">Error loading data</td></tr>';
+          '<tr><td colspan="5">Error loading data. Check API key or sharing settings.</td></tr>';
       }
     }
 
