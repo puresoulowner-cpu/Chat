@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>College e-Sports Registration</title>
+  <style>
+    body {
+      background: #121212;
+      color: #e0e0e0;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #39ff14;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: auto;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+    th {
+      background: #1f1f1f;
+      color: #39ff14;
+    }
+    tr:nth-child(even) {
+      background: #1a1a1a;
+    }
+    tr:hover {
+      background: #272727;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registration for Competitions</h1>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Semester</th>
+        <th>Competition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    const spreadsheetId = '1wPoLkYzRMjpUkOOjn8JFbYzHUx2dB3f539QD7hDcEbg';
+    const apiKey = 'AIzaSyA4UUq-PYSr4BQlgjy8g9qCax52bjJymA0';  // <== Replace with your actual API key
+    const sheetName = 'Form Responses 1';         // <== Update if your tab name is different
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
+
+    async function loadSheetData() {
+      try {
+        const response = await fetch(url);
+        const result = await response.json();
+        const rows = result.values;
+        const tbody = document.querySelector('#dataTable tbody');
+        if (!rows || rows.length < 2) {
+          tbody.innerHTML = '<tr><td colspan="4">No data found</td></tr>';
+          return;
+        }
+        // Remove header row from rows[0]
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const tr = document.createElement('tr');
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell || '';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error('Error loading sheet data:', err);
+        document.querySelector('#dataTable tbody').innerHTML =
+          '<tr><td colspan="4">Error loading data</td></tr>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSheetData);
+  </script>
+</body>
+</html>
