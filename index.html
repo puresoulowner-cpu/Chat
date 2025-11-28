@@ -285,7 +285,7 @@
       });
     }
 
-    async function uploadFilesToCloudinary(files) {
+   async function uploadFilesToCloudinary(files) {
   const uploadedUrls = [];
 
   for (let i = 0; i < files.length; i++) {
@@ -293,11 +293,18 @@
     const url = `https://api.cloudinary.com/v1_1/duxtdcjwj/auto/upload`;
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'chat_upload'); // your unsigned preset
+    formData.append('upload_preset', 'chat_upload'); // make sure this exists in your Cloudinary
 
     try {
       const res = await fetch(url, { method: 'POST', body: formData });
       const data = await res.json();
+
+      if (!res.ok || !data.secure_url) {
+        console.error('Cloudinary upload error:', data);
+        alert(`Upload failed for file: ${file.name}`);
+        continue; // skip this file
+      }
+
       uploadedUrls.push(data.secure_url);
     } catch (err) {
       console.error("Upload failed for file:", file.name, err);
@@ -305,8 +312,9 @@
     }
   }
 
-  return uploadedUrls; // array of file URLs
+  return uploadedUrls; // always an array (even empty if all failed)
 }
+
 
    // --- Render message docs ---
 function renderMessages(docs){
@@ -406,8 +414,8 @@ function renderMessages(docs){
  async function sendMessage() {
   if (!currentUser) return alert('Login first');
 
-  const text = msgInput.value.trim();
-  const files = document.getElementById('fileInput').files;
+  const text = msgInput.value?.trim() || '';
+  const files = document.getElementById('fileInput')?.files || [];
 
   if (!text && files.length === 0) return; // nothing to send
 
@@ -423,17 +431,22 @@ function renderMessages(docs){
     'messages'
   );
 
-  await addDoc(collectionRef, {
-    uid: currentUser.uid,
-    email: currentUser.email,
-    displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
-    text: text || '',       // ensure text is never undefined
-    fileUrls: fileUrls,     // always an array (can be empty)
-    ts: serverTimestamp()
-  });
+  try {
+    await addDoc(collectionRef, {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
+      text: text,       // always string
+      fileUrls: fileUrls, // always array
+      ts: serverTimestamp()
+    });
+  } catch(err) {
+    console.error("Send message failed:", err);
+    alert("Message not sent: " + err.message);
+  }
 
   msgInput.value = '';
-  document.getElementById('fileInput').value = '';
+  if(document.getElementById('fileInput')) document.getElementById('fileInput').value = '';
 }
 
 
