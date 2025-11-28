@@ -131,30 +131,31 @@
     </div>
 
     <!-- CHAT AREA -->
-    <div class="card chat-area" id="chatCard">
-      <div class="chat-header">
-        <div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button id="openSidebar" style="display:none">☰</button>
-            <div id="chatTitle" style="font-weight:700">Select a room</div>
-            <div style="margin-left:8px" class="small-muted" id="chatSub">Public room</div>
-          </div>
-        </div>
-        <div class="small-muted" id="chatMeta"> </div>
-      </div>
-
-      <div id="messages" class="messages"></div>
-
-      <div style="display:flex;flex-direction:column">
-        <div class="composer">
-          <input id="msgInput" placeholder="Type message and press Enter..." />
-          <button id="sendBtn">Send</button>
-        </div>
+<div class="card chat-area" id="chatCard">
+  <div class="chat-header">
+    <div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="openSidebar" style="display:none">☰</button>
+        <div id="chatTitle" style="font-weight:700">Select a room</div>
+        <div style="margin-left:8px" class="small-muted" id="chatSub">Public room</div>
       </div>
     </div>
+    <div class="small-muted" id="chatMeta"> </div>
   </div>
 
-  <div class="overlay" id="overlay"></div>
+  <div id="messages" class="messages"></div>
+
+  <div style="display:flex;flex-direction:column">
+    <div class="composer" style="gap:8px; display:flex; align-items:center;">
+      <input id="msgInput" placeholder="Type message and press Enter..." style="flex:1;"/>
+      <input type="file" id="fileInput" multiple style="flex:0; width:120px;"/>
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
 
   <!-- Firebase + App Logic -->
   <script type="module">
@@ -284,6 +285,29 @@
       });
     }
 
+    async function uploadFilesToCloudinary(files) {
+  const uploadedUrls = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const url = `https://api.cloudinary.com/v1_1/duxtdcjwj/auto/upload`;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'chat_upload'); // your unsigned preset
+
+    try {
+      const res = await fetch(url, { method: 'POST', body: formData });
+      const data = await res.json();
+      uploadedUrls.push(data.secure_url);
+    } catch (err) {
+      console.error("Upload failed for file:", file.name, err);
+      alert(`Upload failed for ${file.name}: ${err.message}`);
+    }
+  }
+
+  return uploadedUrls; // array of file URLs
+}
+
    // --- Render message docs ---
 function renderMessages(docs){
   messagesEl.innerHTML = '';
@@ -309,38 +333,60 @@ function renderMessages(docs){
     wrapper.appendChild(text);
     wrapper.appendChild(time);
 
+    // --- FILES AREA (multi-file support) ---
+    if (m.fileUrls && m.fileUrls.length > 0) {
+      m.fileUrls.forEach(url => {
+        const fileLink = document.createElement('a');
+        fileLink.href = url;
+        fileLink.target = "_blank";
+        fileLink.style.display = "block";
+        fileLink.style.marginTop = "6px";
+
+        const fileName = url.split('/').pop();
+        fileLink.textContent = "📎 " + fileName;
+        wrapper.appendChild(fileLink);
+
+        // Preview for images
+        if (url.match(/\.(jpeg|jpg|png|gif|webp)$/i)) {
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.maxWidth = "200px";
+          img.style.display = "block";
+          img.style.marginTop = "4px";
+          wrapper.appendChild(img);
+        }
+      });
+    }
+
     // --- ACTIONS AREA (Copy + Delete) ---
     const actions = document.createElement('div');
     actions.className = 'actions';
 
-    // COPY button (for everyone)
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = 'Copy';
-    copyBtn.style.background = 'transparent';
-    copyBtn.style.border = '0';
-    copyBtn.style.color = '#6ee7b7';
-    copyBtn.style.cursor = 'pointer';
-    copyBtn.style.fontWeight = '700';
+    // COPY button (for text only)
+    if (m.text) {
+      const copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copy';
+      copyBtn.style.background = 'transparent';
+      copyBtn.style.border = '0';
+      copyBtn.style.color = '#6ee7b7';
+      copyBtn.style.cursor = 'pointer';
+      copyBtn.style.fontWeight = '700';
 
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(m.text || '');
-      copyBtn.textContent = "Copied ✓";
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(m.text || '');
+        copyBtn.textContent = "Copied ✓";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+      };
 
-      setTimeout(() => {
-        copyBtn.textContent = "Copy";
-      }, 1500);
-    };
-
-    actions.appendChild(copyBtn);
+      actions.appendChild(copyBtn);
+    }
 
     // DELETE button (only for your message)
     if(m.uid === currentUser?.uid){
       const delBtn = document.createElement('button');
       delBtn.className = 'delete-btn';
       delBtn.textContent = 'Delete';
-
       delBtn.onclick = ()=> deleteMessage(d.id);
-
       actions.appendChild(delBtn);
     }
 
@@ -351,34 +397,44 @@ function renderMessages(docs){
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-
     // --- Escape HTML to avoid XSS ---
     function escapeHtml(s){
       if(!s) return '';
       return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
 
-    // --- Send message ---
-    async function sendMessage(){
-      const text = msgInput.value.trim();
-      if(!currentUser) return alert('Please login to send messages.');
-      if(!text) return;
-      let path;
-      if(currentChat.type === 'room'){
-        path = ['chats', currentChat.id, 'messages'];
-      } else {
-        path = ['private', currentChat.id, 'messages'];
-      }
-      const collectionRef = collection(db, ...path);
-      await addDoc(collectionRef, {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
-        text,
-        ts: serverTimestamp()
-      });
-      msgInput.value = '';
-    }
+    async function sendMessage() {
+  if (!currentUser) return alert('Login first');
+
+  const text = msgInput.value.trim();
+  const files = document.getElementById('fileInput').files;
+
+  if (!text && files.length === 0) return; // nothing to send
+
+  let fileUrls = [];
+  if (files.length > 0) {
+    fileUrls = await uploadFilesToCloudinary(files);
+  }
+
+  const collectionRef = collection(db,
+    currentChat.type === 'room' ? 'chats' : 'private',
+    currentChat.id,
+    'messages'
+  );
+
+  await addDoc(collectionRef, {
+    uid: currentUser.uid,
+    email: currentUser.email,
+    displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
+    text,
+    fileUrls, // store array of URLs
+    ts: serverTimestamp()
+  });
+
+  msgInput.value = '';
+  document.getElementById('fileInput').value = '';
+}
+
 
     // --- Delete a message doc (only allowed client-side if you own it) ---
     async function deleteMessage(docId){
