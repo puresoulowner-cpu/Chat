@@ -284,41 +284,73 @@
       });
     }
 
-    // --- Render message docs ---
-    function renderMessages(docs){
-      messagesEl.innerHTML = '';
-      docs.forEach(d=>{
-        const m = d.data();
-        const wrapper = document.createElement('div');
-        wrapper.className = 'msg' + (m.uid === currentUser?.uid ? ' me' : '');
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = m.displayName || m.email || 'anon';
-        const text = document.createElement('div');
-        text.innerHTML = escapeHtml(m.text || '');
-        const time = document.createElement('div');
-        time.className = 'time';
-        time.textContent = fmtTime(m.ts);
-        wrapper.appendChild(meta);
-        wrapper.appendChild(text);
-        wrapper.appendChild(time);
+   // --- Render message docs ---
+function renderMessages(docs){
+  messagesEl.innerHTML = '';
 
-        // actions (delete) if this is your message
-        if(m.uid === currentUser?.uid){
-          const actions = document.createElement('div');
-          actions.className = 'actions';
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = 'Delete';
-          del.onclick = ()=> deleteMessage(d.id);
-          actions.appendChild(del);
-          wrapper.appendChild(actions);
-        }
+  docs.forEach(d=>{
+    const m = d.data();
 
-        messagesEl.appendChild(wrapper);
-      });
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg' + (m.uid === currentUser?.uid ? ' me' : '');
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = m.displayName || m.email || 'anon';
+
+    const text = document.createElement('div');
+    text.textContent = m.text || '';
+
+    const time = document.createElement('div');
+    time.className = 'time';
+    time.textContent = fmtTime(m.ts);
+
+    wrapper.appendChild(meta);
+    wrapper.appendChild(text);
+    wrapper.appendChild(time);
+
+    // --- ACTIONS AREA (Copy + Delete) ---
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    // COPY button (for everyone)
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy';
+    copyBtn.style.background = 'transparent';
+    copyBtn.style.border = '0';
+    copyBtn.style.color = '#6ee7b7';
+    copyBtn.style.cursor = 'pointer';
+    copyBtn.style.fontWeight = '700';
+
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(m.text || '');
+      copyBtn.textContent = "Copied ✓";
+
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+      }, 1500);
+    };
+
+    actions.appendChild(copyBtn);
+
+    // DELETE button (only for your message)
+    if(m.uid === currentUser?.uid){
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Delete';
+
+      delBtn.onclick = ()=> deleteMessage(d.id);
+
+      actions.appendChild(delBtn);
     }
+
+    wrapper.appendChild(actions);
+    messagesEl.appendChild(wrapper);
+  });
+
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
 
     // --- Escape HTML to avoid XSS ---
     function escapeHtml(s){
@@ -361,6 +393,18 @@
         alert('Delete failed: ' + err.message);
       }
     }
+
+    // --- Copy a message text ---
+function copyMessage(text){
+  if(!text) return;
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      alert("✅ Message copied!");
+    })
+    .catch(err => {
+      alert("❌ Copy failed: " + err.message);
+    });
+}
 
     // --- Auth handlers ---
     signupBtn.onclick = async ()=>{
