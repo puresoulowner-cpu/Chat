@@ -403,7 +403,7 @@ function renderMessages(docs){
       return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
 
-    async function sendMessage() {
+ async function sendMessage() {
   if (!currentUser) return alert('Login first');
 
   const text = msgInput.value.trim();
@@ -416,7 +416,8 @@ function renderMessages(docs){
     fileUrls = await uploadFilesToCloudinary(files);
   }
 
-  const collectionRef = collection(db,
+  const collectionRef = collection(
+    db,
     currentChat.type === 'room' ? 'chats' : 'private',
     currentChat.id,
     'messages'
@@ -426,14 +427,15 @@ function renderMessages(docs){
     uid: currentUser.uid,
     email: currentUser.email,
     displayName: currentUser.displayName || displayNameEl.value || currentUser.email,
-    text,
-    fileUrls, // store array of URLs
+    text: text || '',       // ensure text is never undefined
+    fileUrls: fileUrls,     // always an array (can be empty)
     ts: serverTimestamp()
   });
 
   msgInput.value = '';
   document.getElementById('fileInput').value = '';
 }
+
 
 
     // --- Delete a message doc (only allowed client-side if you own it) ---
