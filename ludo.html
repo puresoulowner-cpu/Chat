@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Couple Ludo — Animated Pink & Neon Blue</title>
+<style>
+  :root{
+    --bg:#05060a;
+    --panel:#0d1116;
+    --pink:#ff4db8;
+    --neon:#00d1ff;
+    --muted:#9aa4b2;
+    --glass: rgba(255,255,255,0.03);
+    --accent-glow: 0 8px 30px rgba(0,0,0,0.6);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  html,body{height:100%;margin:0;background:
+    radial-gradient(900px 400px at 10% 10%, rgba(0,209,255,0.04), transparent 10%),
+    radial-gradient(700px 300px at 90% 90%, rgba(255,77,184,0.04), transparent 10%),
+    var(--bg);color:#e6eef6;-webkit-font-smoothing:antialiased}
+
+  .app{max-width:1100px;margin:18px auto;padding:14px;border-radius:14px;display:grid;grid-template-columns:420px 1fr;gap:14px}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+  h1{font-size:20px;margin:0}
+  .subtitle{color:var(--muted);font-size:13px}
+
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:var(--accent-glow)}
+  .lobby{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;gap:8px}
+  input[type="text"], input[type="number"]{flex:1;padding:10px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:inherit}
+  button{background:linear-gradient(90deg,var(--pink),var(--neon));border:none;color:#021;padding:10px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
+  small.note{color:var(--muted);display:block;margin-top:6px}
+
+  .board-wrap{display:flex;flex-direction:column;gap:12px}
+  .top-bar{display:flex;justify-content:space-between;align-items:center}
+  .players{display:flex;gap:6px;align-items:center}
+  .player-pill{padding:6px 10px;border-radius:999px;background:linear-gradient(90deg, rgba(255,77,184,0.08), rgba(0,209,255,0.04));border:1px solid rgba(255,255,255,0.02);display:flex;gap:8px;align-items:center}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--pink);box-shadow:0 0 8px currentColor;display:inline-block}
+  .dot.blue{background:var(--neon)}
+  .info{font-size:13px;color:var(--muted)}
+
+  .board{width:100%;aspect-ratio:1/1;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border-radius:14px;padding:12px;display:grid;grid-template-columns: repeat(11,1fr);grid-template-rows: repeat(11,1fr);gap:6px;position:relative;overflow:hidden}
+  .cell{background:transparent;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;position:relative}
+  .home{border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}
+  .home .title{font-size:12px;color:var(--muted)}
+  .home.red{background:linear-gradient(180deg, rgba(255,77,184,0.08), rgba(255,77,184,0.03));border:2px solid rgba(255,77,184,0.06)}
+  .home.blue{background:linear-gradient(180deg, rgba(0,209,255,0.06), rgba(0,209,255,0.02));border:2px solid rgba(0,209,255,0.06)}
+
+  .track{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;position:relative;transition:transform 300ms cubic-bezier(.2,.8,.2,1)}
+  .sq.safe{box-shadow: 0 0 18px rgba(255,255,255,0.02) inset}
+  .token{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#062;font-weight:700;cursor:pointer;position:absolute;transform:translate(-50%,-50%);left:50%;top:50%;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+  .token.red{background:linear-gradient(180deg,var(--pink),#b71b6f);color:white}
+  .token.blue{background:linear-gradient(180deg,var(--neon),#007a8a);color:#012}
+
+  /* animated glow when it's your turn */
+  .glow-pulse{box-shadow:0 0 30px rgba(255,77,184,0.12), 0 0 60px rgba(0,209,255,0.06);animation: pulse 2s infinite}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+  .controls{display:flex;gap:8px;align-items:center}
+  .dice{width:72px;height:72px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  .dice.animate{animation: dice-shake 800ms cubic-bezier(.2,.8,.2,1)}
+  @keyframes dice-shake{0%{transform:rotate(0) translateY(0)}20%{transform:rotate(-12deg) translateY(-4px)}40%{transform:rotate(10deg) translateY(2px)}60%{transform:rotate(-6deg) translateY(-2px)}80%{transform:rotate(4deg) translateY(1px)}100%{transform:rotate(0) translateY(0)}}
+
+  .chat{background:var(--panel);padding:12px;border-radius:12px;height:420px;display:flex;flex-direction:column}
+  .messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+  .msg{padding:10px;border-radius:12px;background:rgba(255,255,255,0.02);font-size:13px;max-width:78%}
+  .msg.me{align-self:flex-end;background:linear-gradient(90deg,var(--pink),var(--neon));color:#021}
+  .composer{display:flex;gap:8px;margin-top:8px}
+  .small{font-size:12px;color:var(--muted)}
+
+  footer{grid-column:1/-1;text-align:center;padding-top:8px;color:var(--muted);font-size:13px}
+  @media (max-width:980px){.app{grid-template-columns:1fr;padding:12px}.board{height:74vw}.chat{height:320px}}
+  @media (max-width:560px){.dice{width:60px;height:60px;font-size:22px}.token{width:24px;height:24px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div style="width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--pink),var(--neon));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021">L</div>
+    <div>
+      <h1>Couple Ludo — Animated</h1>
+      <div class="subtitle">Pink & Neon Blue · Mobile-first · Vibration & reminder sound</div>
+    </div>
+  </header>
+
+  <div class="panel lobby">
+    <strong>Create or Join a Room</strong>
+    <div class="row">
+      <input id="nameInput" placeholder="Your name (e.g. You)" value="Player" />
+    </div>
+    <div class="row">
+      <input id="roomInput" placeholder="Room code (leave empty to create)" />
+      <button id="createBtn">Create</button>
+      <button id="joinBtn" class="ghost">Join</button>
+    </div>
+    <div class="row">
+      <button id="localBtn" class="ghost">Local Play (same device)</button>
+      <button id="resetBtn" class="ghost">Reset / Clear Room (host only)</button>
+    </div>
+    <small class="note">Online play uses Firebase Realtime Database for sync & chat. Paste your Firebase config in the code. Mobile: enable vibration & sound in your browser settings.</small>
+
+    <hr style="border:none;border-top:1px dashed rgba(255,255,255,0.03)"/>
+
+    <div>
+      <strong>Room info</strong>
+      <div class="small" id="roomInfo">Not connected</div>
+      <div class="small" id="playersList"></div>
+    </div>
+
+    <hr style="border:none;border-top:1px dashed rgba(255,255,255,0.03)"/>
+
+    <div>
+      <strong>How to use</strong>
+      <ol style="margin:8px 0 0 16px;color:var(--muted)">
+        <li>Create a room and share the code with your gf.</li>
+        <li>She joins the same code using her browser (mobile supported).</li>
+        <li>Tap <strong>Roll</strong>, tap a token to move. Bring out on 6. Capture to send back to start.</li>
+        <li>First to get all 4 tokens HOME wins.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="board-wrap panel">
+    <div class="top-bar">
+      <div class="players">
+        <div class="player-pill"><span class="dot" id="p1Dot"></span><span id="p1Name">Player 1</span></div>
+        <div class="player-pill"><span class="dot blue" id="p2Dot"></span><span id="p2Name">Player 2</span></div>
+      </div>
+      <div class="info" id="status">Idle — create or join a room</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:12px">
+      <div>
+        <div class="board" id="board"></div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:8px;align-items:center">
+          <div class="controls">
+            <div class="dice" id="dice">—</div>
+            <button id="rollBtn">Roll</button>
+            <div class="small" id="turnNote">Waiting...</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="undoBtn" class="ghost">Undo (host)</button>
+            <button id="rematchBtn" class="ghost">Rematch</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div><strong>Chat</strong><div class="small">Talk while you play 💕</div></div>
+          <div><small class="small" id="roomCodeDisplay">Room: —</small></div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="composer">
+          <input id="msgInput" placeholder="Say something..." />
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Made for two. Mobile-friendly with vibration & reminder sounds 🎲💖</footer>
+</div>
+
+<script>
+/*
+  Upgraded Couple Ludo — animations, reminder sound/vibration, mobile friendly.
+  Firebase config remains optional. To enable online play, paste your Firebase config in FIREBASE_CONFIG.
+*/
+
+/* ==================== FIREBASE (paste your config) ==================== */
+const FIREBASE_CONFIG = {
+  // apiKey: "...",
+  // authDomain: "...",
+  // databaseURL: "https://...",
+  // projectId: "...",
+  // appId: "..."
+};
+/* ================= END FIREBASE CONFIG ================= */
+
+let USE_FIREBASE = !!FIREBASE_CONFIG.apiKey;
+
+/* ---------- Game constants ---------- */
+const TRACK_LEN = 28;
+const HOME_STRETCH = 4;
+
+/* ---------- State ---------- */
+const state = {
+  room: null,
+  me: { name: "Player", id: null, slot: null },
+  host: null,
+  online: false,
+  players: {},
+  turn: 1,
+  dice: null,
+  tokens: {1:[null,null,null,null],2:[null,null,null,null]},
+  rollUsed:false,
+  winner:null,
+  lastMove: null,
+  chat: []
+};
+
+let db = { ref: null, connected:false };
+
+/* ---------- DOM ---------- */
+const boardEl = document.getElementById('board');
+const createBtn = document.getElementById('createBtn');
+const joinBtn = document.getElementById('joinBtn');
+const localBtn = document.getElementById('localBtn');
+const resetBtn = document.getElementById('resetBtn');
+const nameInput = document.getElementById('nameInput');
+const roomInput = document.getElementById('roomInput');
+const roomInfo = document.getElementById('roomInfo');
+const playersList = document.getElementById('playersList');
+const p1NameEl = document.getElementById('p1Name');
+const p2NameEl = document.getElementById('p2Name');
+const p1Dot = document.getElementById('p1Dot');
+const p2Dot = document.getElementById('p2Dot');
+const statusEl = document.getElementById('status');
+const diceEl = document.getElementById('dice');
+const rollBtn = document.getElementById('rollBtn');
+const turnNote = document.getElementById('turnNote');
+const messagesEl = document.getElementById('messages');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+const undoBtn = document.getElementById('undoBtn');
+const rematchBtn = document.getElementById('rematchBtn');
+
+/* ---------- Audio & Vibration helpers ---------- */
+const audioCtx = (typeof AudioContext !== 'undefined') ? new AudioContext() : null;
+function beep(freq=440,duration=120,vol=0.03){
+  if(!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  setTimeout(()=>{ o.stop(); }, duration);
+}
+function playDiceSound(){ beep(520,140,0.06); }
+function playCapture(){ beep(240,180,0.09); }
+function playWin(){ beep(880,240,0.08); setTimeout(()=>beep(660,200,0.06),200); }
+function vibrate(pattern= [60]){ if(navigator.vibrate) navigator.vibrate(pattern); }
+
+/* ---------- UTIL ---------- */
+function makeCode(len=5){ const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
+
+/* ---------- Board layout ---------- */
+function buildBoard(){
+  boardEl.innerHTML=''; const N=11;
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){ const d=document.createElement('div'); d.className='cell'; d.dataset.r=r; d.dataset.c=c; boardEl.appendChild(d);} 
+  const coords = [ [5,10],[6,10],[7,10],[8,10],[9,10],[10,10],[10,9],[10,8],[10,7],[10,6],[10,5],[9,5],[8,5],[7,5],[6,5],[5,5],[5,4],[5,3],[5,2],[5,1],[5,0],[4,0],[3,0],[2,0],[1,0],[0,0],[0,1],[0,2] ];
+  for(let i=0;i<TRACK_LEN;i++){ const [r,c]=coords[i]; const idx=r*11+c; const el=boardEl.children[idx]; el.innerHTML = `<div class="track" data-track="${i}">${i+1}</div>`; el.dataset.track=i; if([0,7,14,21].includes(i)) el.querySelector('.track').classList.add('safe'); }
+  putHome(0,10,'red','Red Home'); putHome(10,0,'blue','Blue Home'); renderTokens();
+}
+function putHome(r,c,cls,label){ const el = boardEl.children[r*11 + c]; el.innerHTML = `<div class="home ${cls}"><div class="title">${label}</div><div style="display:flex;gap:6px;margin-top:6px"></div></div>`; }
+
+/* ---------- Rendering tokens with animations ---------- */
+function renderTokens(){
+  // clear all existing tokens on tracks
+  boardEl.querySelectorAll('.track').forEach(t=>{ t.style.position='relative'; // ensure
+    // remove old token children but keep number
+    const txt = (parseInt(t.dataset.track)+1);
+    t.innerHTML = `${txt}`; });
+
+  // place track tokens
+  for(const p of [1,2]){
+    state.tokens[p].forEach((pos,idx)=>{
+      if(pos === null) return;
+      if(typeof pos === 'string' && pos.startsWith('H')){
+        const homeEl = (p===1) ? boardEl.children[0*11 + 10] : boardEl.children[10*11 + 0];
+        const container = homeEl.querySelector('.home > div:nth-child(2)');
+        let tokenDiv = container.querySelector(`.token.t_${p}_${idx}`);
+        if(!tokenDiv){ tokenDiv = document.createElement('div'); tokenDiv.className = `token ${p===1?'red':'blue'} t_${p}_${idx}`; tokenDiv.style.width='20px'; tokenDiv.style.height='20px'; tokenDiv.style.fontSize='12px'; tokenDiv.textContent = idx+1; tokenDiv.title = `P${p} token ${idx+1} (HOME)`; container.appendChild(tokenDiv); }
+      } else {
+        const trackEl = boardEl.querySelector(`[data-track="${pos}"] .track`);
+        if(trackEl){
+          const tdiv = document.createElement('div'); tdiv.className = `token ${p===1?'red':'blue'}`; tdiv.textContent = idx+1; tdiv.dataset.p=p; tdiv.dataset.idx=idx; tdiv.title = `P${p} token ${idx+1}`;
+          // start with small scale and animate into place
+          tdiv.style.opacity=0; tdiv.style.transform='translate(-50%,-60%) scale(0.6)';
+          // pointer events
+          tdiv.addEventListener('click',(e)=> tokenClickHandler(p,idx));
+          trackEl.appendChild(tdiv);
+          requestAnimationFrame(()=>{ tdiv.style.transition='transform 300ms cubic-bezier(.2,.8,.2,1), opacity 260ms'; tdiv.style.transform='translate(-50%,-50%) scale(1)'; tdiv.style.opacity=1; });
+        }
+      }
+    });
+  }
+  p1NameEl.textContent = state.players.slot1?.name || 'Player 1'; p2NameEl.textContent = state.players.slot2?.name || 'Player 2'; roomCodeDisplay.textContent = state.room ? `Room: ${state.room}` : 'Room: —'; updateTurnNote(); renderChat();
+}
+
+/* ---------- Move logic (same as prior) ---------- */
+function canMoveToken(p, idx, roll){ const pos = state.tokens[p][idx]; if(pos === null) return roll === 6; if(typeof pos === 'string' && pos.startsWith('H')) return false; const entry = (p===1)?0:14; let linear = (pos - entry + TRACK_LEN) % TRACK_LEN; let newLinear = linear + roll; if(newLinear < TRACK_LEN) return true; else { const need = newLinear - TRACK_LEN; return need < HOME_STRETCH; } }
+
+function captureAt(trackIndex, movingPlayer){ const other = movingPlayer===1?2:1; state.tokens[other].forEach((pos,idx)=>{ if(pos === trackIndex){ state.tokens[other][idx] = null; pushChat(`${state.players[`slot${movingPlayer}`].name || 'P'+movingPlayer} captured ${state.players[`slot${other}`].name || 'P'+other}'s token!`); playCapture(); vibrate([30,20]); } }); }
+
+function checkWin(p){ return state.tokens[p].every(pos => (typeof pos === 'string' && pos.startsWith('H') && parseInt(pos.slice(1)) === HOME_STRETCH)); }
+
+function performMove(p, idx, roll){ state.lastMove = JSON.stringify({ tokens: JSON.parse(JSON.stringify(state.tokens)), turn: state.turn, dice: state.dice, winner: state.winner }); const pos = state.tokens[p][idx]; if(pos === null && roll===6){ const entry = (p===1)?0:14; captureAt(entry,p); state.tokens[p][idx] = entry; } else { const entry = (p===1)?0:14; let linear = (pos - entry + TRACK_LEN) % TRACK_LEN; let newLinear = linear + roll; if(newLinear < TRACK_LEN){ const newPos = (entry + newLinear) % TRACK_LEN; captureAt(newPos,p); state.tokens[p][idx] = newPos; } else { const need = newLinear - TRACK_LEN; state.tokens[p][idx] = 'H'+(need+1); } }
+  state.rollUsed = true; let extraTurn = (roll===6);
+  if(checkWin(p)){ state.winner = p; state.turn = null; playWin(); vibrate([80,30,80]); pushChat(`${state.players['slot'+p].name || 'P'+p} won the game! 🎉`); }
+  else { if(!extraTurn) state.turn = (p===1)?2:1; }
+  state.dice = null; state.rollUsed=false; syncState(); // animate movement visually by re-render
+  renderTokens(); renderStatus(); }
+
+function tokenClickHandler(p, idx){ if(state.winner) return alert('Game over'); if(!canActAsLocalPlayer()) return; const localSlot = state.me.slot; if(localSlot !== state.turn) return alert('Not your turn'); if(localSlot !== p) return alert('You can only move your own tokens'); if(state.dice===null) return alert('Roll the dice first'); if(!canMoveToken(p,idx,state.dice)) return alert('No legal move for that token with this roll'); performMove(p,idx,state.dice); }
+
+/* ---------- Dice behavior with animation ---------- */
+rollBtn.addEventListener('click', ()=>{
+  if(!canActAsLocalPlayer()) return; if(state.winner) return; if(!state.me.slot) return alert('Join a room or choose Local Play'); if(state.turn !== state.me.slot) return alert('Not your turn');
+  // dice animation
+  diceEl.classList.add('animate');
+  // small visual rolling before final value
+  playDiceSound(); vibrate([30]);
+  setTimeout(()=>{ diceEl.classList.remove('animate'); const val = Math.floor(Math.random()*6)+1; state.dice = val; diceEl.textContent = val; syncState(); renderTokens(); const hasLegal = state.tokens[state.me.slot].some((_,i)=> canMoveToken(state.me.slot,i,val)); if(!hasLegal){ pushChat(`${state.me.name} rolled ${val} but has no legal moves.`); setTimeout(()=>{ state.dice=null; state.turn = state.turn===1?2:1; syncState(); renderTokens(); }, 800); } }, 700);
+});
+
+/* ---------- Chat ---------- */
+sendBtn.addEventListener('click', ()=>{ const t = msgInput.value.trim(); if(!t) return; pushChat(`${state.me.name}: ${t}`, true); msgInput.value='';});
+function pushChat(msg, localOnly=false){ const o = {text:msg, ts: Date.now()}; state.chat.push(o); renderChat(); if(USE_FIREBASE && state.room && !localOnly && db.ref){ const ref = db.ref.ref(`rooms/${state.room}/chat`).push(); ref.set(o); } }
+function renderChat(){ messagesEl.innerHTML=''; state.chat.slice(-200).forEach(m=>{ const div=document.createElement('div'); div.className='msg'; if(m.text.startsWith(state.me.name+':')) div.classList.add('me'); div.textContent = m.text; messagesEl.appendChild(div); }); messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+/* ---------- Room lifecycle & Firebase ---------- */
+createBtn.addEventListener('click', ()=>{ state.me.name = nameInput.value.trim() || 'Player'; const code = makeCode(); joinRoom(code,true); });
+joinBtn.addEventListener('click', ()=>{ state.me.name = nameInput.value.trim() || 'Player'; const code = (roomInput.value.trim()||'').toUpperCase(); if(!code) return alert('Enter a room code or click Create'); joinRoom(code,false); });
+localBtn.addEventListener('click', ()=>{ state.me.name = nameInput.value.trim() || 'Player'; state.room = 'LOCAL_'+makeCode(6); state.online=false; state.me.id='local-'+Math.random().toString(36).slice(2,9); state.me.slot=1; state.players={ slot1:{name:state.me.name,id:state.me.id}, slot2:{name:'Partner',id:'bot'} }; state.host=state.me.id; roomInfo.textContent = `Local room (${state.room}). Pass the device for pass-and-play.`; state.tokens={1:[null,null,null,null],2:[null,null,null,null]}; state.turn=1; state.winner=null; renderTokens(); renderChat(); renderStatus(); });
+resetBtn.addEventListener('click', ()=>{ if(!state.room) return alert('No room'); if(state.me.id !== state.host){ if(confirm('You are not host. Reset local state anyway?')){ state.tokens={1:[null,null,null,null],2:[null,null,null,null]}; state.turn=1; state.winner=null; syncState(); renderTokens(); } return; } if(USE_FIREBASE && state.room && db.ref){ db.ref.ref(`rooms/${state.room}`).remove().then(()=> alert('Room cleared')).catch(e=> alert('Error: '+e.message)); } else { state.tokens={1:[null,null,null,null],2:[null,null,null,null]}; state.turn=1; state.winner=null; state.dice=null; syncState(); renderTokens(); } });
+
+async function joinRoom(code, host=false){ state.room=code; state.me.id='u_'+Math.random().toString(36).slice(2,9); state.me.slot=null; state.me.name=nameInput.value.trim()||'Player'; if(USE_FIREBASE){ // init firebase libs if not done
+    if(!db.ref){ await loadFirebase(); }
+    state.online=true; const rref=db.ref.ref(`rooms/${code}`); const snap = await rref.child('players').get(); let playersSnap = snap.exists()? snap.val(): null; if(host){ const init={ host: state.me.id, players:{ slot1:{ id: state.me.id, name: state.me.name }, slot2:{ id: 'empty', name:'Waiting...' } }, state:{ turn:1, tokens:{ '1':[null,null,null,null], '2':[null,null,null,null] }, dice:null, winner:null }, chat:{} }; await rref.set(init); state.host=state.me.id; state.me.slot=1; state.players.slot1={ id: state.me.id, name: state.me.name }; state.players.slot2={ id:'empty', name:'Waiting...' }; subscribeRoom(code); roomInfo.textContent = `Room ${code} created — share the code.`; } else { if(!snap.exists()){ alert('Room not found — maybe your friend hasn\'t created it yet.'); return; } const players = snap.val(); if(players.slot1 && players.slot1.id === 'empty'){ await rref.child('players/slot1').set({ id: state.me.id, name: state.me.name }); state.me.slot=1; } else if(players.slot2 && players.slot2.id === 'empty'){ await rref.child('players/slot2').set({ id: state.me.id, name: state.me.name }); state.me.slot=2; } else if(players.slot1 && players.slot2 && players.slot1.id !== 'empty' && players.slot2.id !== 'empty'){ alert('Room is full.'); return; } else { await rref.child('players/slot2').set({ id: state.me.id, name: state.me.name }); state.me.slot=2; } const h = (await rref.child('host').get()).val(); state.host=h; subscribeRoom(code); roomInfo.textContent = `Joined room ${code} as Player ${state.me.slot}`; } } else { state.online=false; state.host=state.me.id; state.me.slot=1; state.players={ slot1:{ id: state.me.id, name: state.me.name }, slot2:{ id:'other', name:'Partner' } }; state.tokens={1:[null,null,null,null],2:[null,null,null,null]}; state.turn=1; state.winner=null; renderTokens(); renderChat(); renderStatus(); roomInfo.textContent = `Local room ${code} (offline).`; }
+}
+
+/* ---------- Firebase helpers ---------- */
+async function loadFirebase(){ return new Promise((resolve,reject)=>{ const s1=document.createElement('script'); s1.src='https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js'; s1.async=false; const s2=document.createElement('script'); s2.src='https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js'; s2.async=false; document.head.appendChild(s1); document.head.appendChild(s2); s2.onload = ()=>{ firebase.initializeApp(FIREBASE_CONFIG); db.ref = firebase.database(); db.connected=true; resolve(); }; s2.onerror = reject; }); }
+
+function subscribeRoom(code){ if(!USE_FIREBASE || !db.ref) return; const rref = db.ref.ref(`rooms/${code}`);
+  rref.child('players').on('value', snap=>{ const val = snap.val() || {}; state.players = { slot1: val.slot1||{id:'empty',name:'Waiting...'}, slot2: val.slot2||{id:'empty',name:'Waiting...'} }; if(state.players.slot1.id === state.me.id) state.me.slot=1; if(state.players.slot2.id === state.me.id) state.me.slot=2; p1NameEl.textContent = state.players.slot1.name || 'Player 1'; p2NameEl.textContent = state.players.slot2.name || 'Player 2'; playersList.textContent = `P1: ${state.players.slot1.name} — P2: ${state.players.slot2.name}`; });
+  rref.child('state').on('value', snap=>{ const val = snap.val(); if(!val) return; state.turn = val.turn; state.dice = val.dice; state.tokens = {1: val.tokens['1'] || [null,null,null,null], 2: val.tokens['2'] || [null,null,null,null]}; state.winner = val.winner || null; renderTokens(); renderStatus(); });
+  rref.child('chat').on('child_added', snap=>{ const v = snap.val(); if(v){ state.chat.push(v); renderChat(); } });
+  rref.child('host').on('value', snap=>{ state.host = snap.val(); });
+  rref.child('presence/' + state.me.id).set({ name: state.me.name, ts: Date.now() }); rref.child('presence/' + state.me.id).onDisconnect().remove(); }
+
+function syncState(){ renderTokens(); renderChat(); renderStatus(); if(USE_FIREBASE && state.room && db.ref){ const rref = db.ref.ref(`rooms/${state.room}/state`); const payload = { turn: state.turn, dice: state.dice, tokens: state.tokens, winner: state.winner || null }; rref.set(payload); } }
+
+function renderStatus(){ updateTurnNote(); diceEl.textContent = state.dice === null ? '—' : state.dice; if(state.winner){ diceEl.textContent='🏁'; } }
+
+function updateTurnNote(){ if(state.winner){ turnNote.textContent = `${state.players['slot'+state.winner]?.name || 'Player '+state.winner} wins!`; statusEl.textContent = `Winner — ${state.players['slot'+state.winner]?.name || 'Player '+state.winner}`; return; } if(!state.turn){ turnNote.textContent = 'Waiting...'; return; } const whoName = state.players['slot'+state.turn]?.name || `Player ${state.turn}`; turnNote.textContent = `${whoName}'s turn`; statusEl.textContent = `Turn: ${whoName}`; // gentle highlight
+  if(state.me.slot === state.turn){ // highlight dice
+    diceEl.classList.add('glow-pulse'); // vibrate reminder after a period if mobile
+    scheduleReminder();
+  } else { diceEl.classList.remove('glow-pulse'); clearReminder(); } }
+
+/* ---------- Reminder timer (if opponent idle) ---------- */
+let reminderTimer = null;
+function scheduleReminder(){ clearReminder(); // after 18s, play a soft nudge sound
+  reminderTimer = setTimeout(()=>{ // only nudge if still the same player's turn
+    if(state.me.slot === state.turn){ beep(720,120,0.05); vibrate([40]); }
+  }, 18000); }
+function clearReminder(){ if(reminderTimer) { clearTimeout(reminderTimer); reminderTimer=null; } }
+
+/* ---------- Undo & Rematch ---------- */nundoBtn && undoBtn.addEventListener('click', ()=>{ if(state.me.id !== state.host) return alert('Only host can undo'); if(!state.lastMove) return alert('No undo available'); try{ const prev = JSON.parse(state.lastMove); for(const k of ['tokens','turn','dice','winner']) state[k] = prev[k]; state.lastMove = null; syncState(); renderTokens(); }catch(e){ alert('Undo failed') } });
+rematchBtn.addEventListener('click', ()=>{ if(!confirm('Start a rematch? This resets tokens.')) return; state.tokens={1:[null,null,null,null],2:[null,null,null,null]}; state.turn=1; state.winner=null; state.dice=null; syncState(); renderTokens(); });
+
+/* ---------- Utilities ---------- */
+function canActAsLocalPlayer(){ if(!state.me.slot){ alert('Join a room or select Local Play'); return false; } return true; }
+function renderChat(){ messagesEl.innerHTML=''; state.chat.slice(-200).forEach(m=>{ const div=document.createElement('div'); div.className='msg'; if(m.text.startsWith(state.me.name+':')) div.classList.add('me'); div.textContent = m.text; messagesEl.appendChild(div); }); messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+/* ---------- Init ---------- */
+buildBoard(); renderStatus(); renderChat();
+msgInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') sendBtn.click(); }); nameInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') createBtn.click(); });
+
+</script>
+</body>
+</html>
