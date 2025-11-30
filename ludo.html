@@ -1,90 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ludo Local Game</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f0f0f0;
-    }
-    canvas {
-      background: white;
-      width: 95vw;
-      height: 95vw;
-      max-width: 500px;
-      max-height: 500px;
-      border: 3px solid #333;
-    }
-  </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ludo</title>
+	<style>
+		*
+		{
+			margin:0;
+			padding: 0;
+		}
+		.outer
+		{
+			height: 750px;
+			width:750px;
+			margin:0px auto;
+			border:1px solid red;
+		}
+		.box_row
+		{
+		height: 300px;
+		width:750px;
+		}
+		.box
+		{
+			height: 200px;
+			width:200px;
+			float: left;
+		}
+		.v_lad
+		{
+			height: 300px;
+			width:150px;
+			float: left;
+		}
+		.circle
+		{
+			height: 50px;
+			width:50px;
+			margin:25px;
+			border-radius: 50%;
+			box-sizing: border-box;
+			float: left;
+		}
+		.border_red{border:5px solid red;}
+		.border_green{border:5px solid green;}
+		.border_blue{border:5px solid blue;}
+		.border_yellow{border:5px solid yellow;}
+
+		.v_lad_row
+		{
+			height: 50px;
+			width:150px;
+		}
+		.v_lad_cell
+		{
+			height: 50px;
+			width:50px;
+			border:1px solid #000;
+			box-sizing: border-box;
+			float: left;
+			text-align: center;
+		}
+
+		.red{background: red;}
+		.green{background: green;}
+		.blue{background: blue;}
+		yellow{background: yellow;}
+
+		.middle_row
+		{
+			height: 150px;
+			width:750px;
+		}
+
+		.h_lad
+		{
+			height: 150px;
+			width:300px;
+			float: left;
+		}
+		.h_lad_row
+		{
+			height: 50px;
+			width: 300px;
+			float: left;
+		}
+		.h_lad_cell
+		{
+			height: 50px;
+			width:50px;
+			border:1px solid #000;
+			float: left;
+			box-sizing: border-box;
+			text-align: center;
+		}
+
+		.ludo_home
+		{
+			height: 0;
+			width: 0;
+			border-left:75px solid red;
+			border-right:75px solid yellow;
+			border-top:75px solid green;
+			border-bottom:75px solid blue;
+			float: left;
+		}
+
+		.star
+		{
+			font-size: 32px;
+			text-align: center;
+		}
+	</style>
 </head>
 <body>
-  <canvas id="ludoBoard"></canvas>
+	<div class="outer">
+		<div class="box_row">
+			<div class="box" style="border:50px solid red;">
+				<div class="circle border_red"></div>
+				<div class="circle border_red"></div>
+				<div class="circle border_red"></div>
+				<div class="circle border_red"></div>
+			</div>
 
-  <script>
-    const canvas = document.getElementById("ludoBoard");
-    const ctx = canvas.getContext("2d");
+			<div class="v_lad">
+				<div class="v_lad_row">
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell"></div>
+				</div>
+				<div class="v_lad_row">
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell green"></div>
+					<div class="v_lad_cell green"><span class="star">&#9733;</span></div>
+				</div>
+				<div class="v_lad_row">
+					<div class="v_lad_cell green"><span class="star">&#9733;</span></div>
+					<div class="v_lad_cell green"></div>
+					<div class="v_lad_cell"></div>
+				</div>
+				<div class="v_lad_row">
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell green"></div>
+					<div class="v_lad_cell"></div>
+				</div>
+				<div class="v_lad_row">
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell green"></div>
+					<div class="v_lad_cell"></div>
+				</div>
+				<div class="v_lad_row">
+					<div class="v_lad_cell"></div>
+					<div class="v_lad_cell green"></div>
+					<div class="v_lad_cell"></div>
+				</div>
+			</div>
 
-    function resizeCanvas() {
-      const size = Math.min(window.innerWidth * 0.95, 500);
-      canvas.width = size;
-      canvas.height = size;
-      drawBoard();
-    }
+			<div class="box" style="border:50px solid green;">
+				<div class="circle border_green"></div>
+				<div class="circle border_green"></div>
+				<div class="circle border_green"></div>
+				<div class="circle border_green"></div>
+			</div>
+		</div>
 
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+		<div class="middle_row">
+			<div class="h_lad">
+				<div class="h_lad_row">
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell red"><span class="star">&#9733;</span></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+				</div>
 
-    function drawBoard() {
-      const s = canvas.width;
-      const cell = s / 15;
+				<div class="h_lad_row">
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell red"></div>
+					<div class="h_lad_cell red"></div>
+					<div class="h_lad_cell red"></div>
+					<div class="h_lad_cell red"></div>
+					<div class="h_lad_cell red"></div>
+				</div>
 
-      ctx.clearRect(0, 0, s, s);
+				<div class="h_lad_row">
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell red"><span class="star">&#9733;</span></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+				</div>
+			</div>
 
-      const colors = {
-        red: "#e74c3c",
-        green: "#27ae60",
-        yellow: "#f1c40f",
-        blue: "#3498db"
-      };
+			<div class="ludo_home"></div>
 
-      function square(x, y, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, cell * 6, cell * 6);
-      }
+			<div class="h_lad">
+				<div class="h_lad_row">
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell yellow"><span class="star">&#9733;</span></div>
+					<div class="h_lad_cell"></div>
+					<div class="h_lad_cell"></div>
+				</div>
 
-      square(0, 0, colors.red);
-      square(9 * cell, 0, colors.green);
-      square(0, 9 * cell, colors.yellow);
-      square(9 * cell, 9 * cell, colors.blue);
-
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = "black";
-      for (let i = 0; i < 15; i++) {
-        for (let j = 0; j < 15; j++) {
-          ctx.strokeRect(i * cell, j * cell, cell, cell);
-        }
-      }
-
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.moveTo(cell * 6, 0);
-      ctx.lineTo(cell * 9, 0);
-      ctx.lineTo(cell * 9, cell * 6);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(cell * 9, cell * 15);
-      ctx.lineTo(cell * 6, cell * 15);
-      ctx.lineTo(cell * 6, cell * 9);
-      ctx.fill();
-    }
-  </script>
-</body>
-</html>
+				<div class="h_lad_row">
+					<div class="h_lad_cell yellow"></div>
+					<div
+            
