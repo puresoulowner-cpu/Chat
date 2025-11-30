@@ -1,213 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Ludo</title>
-	<style>
-		*
-		{
-			margin:0;
-			padding: 0;
-		}
-		.outer
-		{
-			height: 750px;
-			width:750px;
-			margin:0px auto;
-			border:1px solid red;
-		}
-		.box_row
-		{
-		height: 300px;
-		width:750px;
-		}
-		.box
-		{
-			height: 200px;
-			width:200px;
-			float: left;
-		}
-		.v_lad
-		{
-			height: 300px;
-			width:150px;
-			float: left;
-		}
-		.circle
-		{
-			height: 50px;
-			width:50px;
-			margin:25px;
-			border-radius: 50%;
-			box-sizing: border-box;
-			float: left;
-		}
-		.border_red{border:5px solid red;}
-		.border_green{border:5px solid green;}
-		.border_blue{border:5px solid blue;}
-		.border_yellow{border:5px solid yellow;}
+    <title></title>
+    <style>
+        #main{
+            width:1000px;
+            float:left;
+        }
+        .pawns{
+            width:30px;
+            height:30px;
+            border-radius:20px;
+            position:absolute;
+        }
+        #board{
+            background:url(Images/board.gif) no-repeat;
+            background-size:cover;
+            width:650px;
+            height:550px;
+            float:left;
+            margin-top:8px;
+        }
+        #uselesstext1{
+            float:left;
+            padding-left:10px;
+            padding-right:10px;
+        }
+        footer{
+            font-size:larger;
+            color:darkred;
 
-		.v_lad_row
-		{
-			height: 50px;
-			width:150px;
-		}
-		.v_lad_cell
-		{
-			height: 50px;
-			width:50px;
-			border:1px solid #000;
-			box-sizing: border-box;
-			float: left;
-			text-align: center;
-		}
-
-		.red{background: red;}
-		.green{background: green;}
-		.blue{background: blue;}
-		yellow{background: yellow;}
-
-		.middle_row
-		{
-			height: 150px;
-			width:750px;
-		}
-
-		.h_lad
-		{
-			height: 150px;
-			width:300px;
-			float: left;
-		}
-		.h_lad_row
-		{
-			height: 50px;
-			width: 300px;
-			float: left;
-		}
-		.h_lad_cell
-		{
-			height: 50px;
-			width:50px;
-			border:1px solid #000;
-			float: left;
-			box-sizing: border-box;
-			text-align: center;
-		}
-
-		.ludo_home
-		{
-			height: 0;
-			width: 0;
-			border-left:75px solid red;
-			border-right:75px solid yellow;
-			border-top:75px solid green;
-			border-bottom:75px solid blue;
-			float: left;
-		}
-
-		.star
-		{
-			font-size: 32px;
-			text-align: center;
-		}
-	</style>
+        }
+    </style>
+    <script src="Ludo-game.js"></script>
 </head>
 <body>
-	<div class="outer">
-		<div class="box_row">
-			<div class="box" style="border:50px solid red;">
-				<div class="circle border_red"></div>
-				<div class="circle border_red"></div>
-				<div class="circle border_red"></div>
-				<div class="circle border_red"></div>
-			</div>
+    <div id="main">
+    <div id="board"></div>
+<!--<button type="button" onclick="stepLeft()">Left</button>
+    <button type="button" onclick="stepRight()">Right</button>
+    <button type="button" onclick="stepUp()">Top</button>
+    <button type="button" onclick="stepDown()">Bottom</button>-->
+<!--    <button type="button"  id="red">Red</button>
+    <button type="button" id="green">Green</button>
+    <button type="button" id="blue">Blue</button>
+    <button type="button"  id="yellow">Yellow</button>-->
 
-			<div class="v_lad">
-				<div class="v_lad_row">
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell"></div>
-				</div>
-				<div class="v_lad_row">
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell green"></div>
-					<div class="v_lad_cell green"><span class="star">&#9733;</span></div>
-				</div>
-				<div class="v_lad_row">
-					<div class="v_lad_cell green"><span class="star">&#9733;</span></div>
-					<div class="v_lad_cell green"></div>
-					<div class="v_lad_cell"></div>
-				</div>
-				<div class="v_lad_row">
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell green"></div>
-					<div class="v_lad_cell"></div>
-				</div>
-				<div class="v_lad_row">
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell green"></div>
-					<div class="v_lad_cell"></div>
-				</div>
-				<div class="v_lad_row">
-					<div class="v_lad_cell"></div>
-					<div class="v_lad_cell green"></div>
-					<div class="v_lad_cell"></div>
-				</div>
-			</div>
+    <div id="dice" onclick="randomNum()" style="background-image:url(Images/dice.gif);background-size:contain; width:150px;height:150px; float:left;"></div>
+    <!-- red pawns  start top 28 left 318-->
+    <div class="pawns" id="redpawn1"    onclick="randomMove('red',1)"       style="background-color:red;top:149px;left:442px;"></div>
+    <div class="pawns" id="redpawn2"    onclick="randomMove('red',2)"       style="background-color:red;top:102px;left:395px;"></div>
+    <div class="pawns" id="redpawn3"    onclick="randomMove('red',3)"       style="background-color:red;top:55px;left:442px;"></div>
+    <div class="pawns" id="redpawn4"    onclick="randomMove('red',4)"       style="background-color:red;top:102px;left:490px;"></div>
 
-			<div class="box" style="border:50px solid green;">
-				<div class="circle border_green"></div>
-				<div class="circle border_green"></div>
-				<div class="circle border_green"></div>
-				<div class="circle border_green"></div>
-			</div>
-		</div>
+    <!-- yellow pawns  start top 523 left 218-->
+    <div class="pawns" id="yellowpawn1" onclick="randomMove('yellow',1)"    style="background-color:yellow;top:451px;left:47px;"></div>
+    <div class="pawns" id="yellowpawn2" onclick="randomMove('yellow',2)"    style="background-color:yellow;top:451px;left:140px;"></div>
+    <div class="pawns" id="yellowpawn3" onclick="randomMove('yellow',3)"    style="background-color:yellow;top:404px;left:93px;"></div>
+    <div class="pawns" id="yellowpawn4" onclick="randomMove('yellow',4)"    style="background-color:yellow;top:498px;left:93px;"></div>
 
-		<div class="middle_row">
-			<div class="h_lad">
-				<div class="h_lad_row">
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell red"><span class="star">&#9733;</span></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-				</div>
+    <!-- green pawns  start top 227 left 22-->
+    <div class="pawns" id="greenpawn1"  onclick="randomMove('green',1)"     style="background-color:green;top:149px;left:93px;"></div>
+    <div class="pawns" id="greenpawn2"  onclick="randomMove('green',2)"     style="background-color:green;top:102px;left:140px;"></div>
+    <div class="pawns" id="greenpawn3"  onclick="randomMove('green',3)"     style="background-color:green;top:55px;left:93px;"></div>
+    <div class="pawns" id="greenpawn4"  onclick="randomMove('green',4)"     style="background-color:green;top:102px;left:47px;"></div>
 
-				<div class="h_lad_row">
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell red"></div>
-					<div class="h_lad_cell red"></div>
-					<div class="h_lad_cell red"></div>
-					<div class="h_lad_cell red"></div>
-					<div class="h_lad_cell red"></div>
-				</div>
+    <!-- blue pawns  start top 326 left 515-->
+    <div class="pawns" id="bluepawn1"   onclick="randomMove('blue',1)"      style="background-color:blue;top:451px;left:490px;"></div>
+    <div class="pawns" id="bluepawn2"   onclick="randomMove('blue',2)"      style="background-color:blue;top:451px;left:395px;"></div>
+    <div class="pawns" id="bluepawn3"   onclick="randomMove('blue',3)"      style="background-color:blue;top:404px;left:442px;"></div>
+    <div class="pawns" id="bluepawn4"   onclick="randomMove('blue',4)"      style="background-color:blue;top:498px;left:442px;"></div>
 
-				<div class="h_lad_row">
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell red"><span class="star">&#9733;</span></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-				</div>
-			</div>
 
-			<div class="ludo_home"></div>
-
-			<div class="h_lad">
-				<div class="h_lad_row">
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell yellow"><span class="star">&#9733;</span></div>
-					<div class="h_lad_cell"></div>
-					<div class="h_lad_cell"></div>
-				</div>
-
-				<div class="h_lad_row">
-					<div class="h_lad_cell yellow"></div>
-					<div
-            
+    <h4 id="uselesstext1">It`s </h4><h3 id="player" style="float:left; color:red">red</h3><h4 id="uselesstext2">s turn</h4>
+    <p id="badtext" style="float:left;"></p>
+    </div>
+    <footer title="Copyright by Slavi Koen" id="copyright">FOR ME</footer>
+</body>
+</html>
