@@ -1,20 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Auto Location Save</title>
+  <title>Location Capture</title>
 </head>
 <body>
 
-<h2>Location is being captured automatically...</h2>
-<p id="status">Waiting for permission...</p>
+<h2>Enable Location</h2>
+<button id="startBtn">Allow Location</button>
+<p id="status"></p>
 
 <script type="module">
-  // 🔹 Firebase imports
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-  // 🔹 Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
     authDomain: "chat-a9021.firebaseapp.com",
@@ -25,55 +23,47 @@
     appId: "1:910705138024:web:8bbf2dd7840b6e28015edd"
   };
 
-  // 🔹 Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
   const statusEl = document.getElementById("status");
+  const btn = document.getElementById("startBtn");
 
-  // 🔹 Auto-run on page load
-  window.onload = () => {
-    if (!navigator.geolocation) {
-      statusEl.innerText = "Geolocation not supported ❌";
-      return;
-    }
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    statusEl.innerText = "Requesting location...";
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const locationData = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
+      (pos) => {
+        const data = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          time: new Date().toISOString(),
+          ua: navigator.userAgent
         };
 
-        // 🔹 Save to Firebase
-        push(ref(db, "user_locations"), locationData)
+        push(ref(db, "user_locations"), data)
           .then(() => {
             statusEl.innerHTML = `
-              Location saved ✅ <br>
-              Lat: ${locationData.latitude} <br>
-              Long: ${locationData.longitude}
+              ✅ Location saved<br>
+              Lat: ${data.lat}<br>
+              Lng: ${data.lng}
             `;
           })
-          .catch((err) => {
-            statusEl.innerText = "Firebase error ❌";
+          .catch(err => {
+            statusEl.innerText = "Firebase write failed ❌";
             console.error(err);
           });
       },
-      (error) => {
-        statusEl.innerText = "Permission denied or error ❌";
-        console.error(error.message);
+      (err) => {
+        statusEl.innerText = "Location permission denied ❌";
+        console.error(err.message);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000
-      }
+      { enableHighAccuracy: true }
     );
-  };
+  });
 </script>
 
 </body>
 </html>
-
