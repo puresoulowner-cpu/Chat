@@ -1,28 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Get My IP</title>
+  <title>Get Current Location</title>
 </head>
 <body>
 
-<h2>My Public IP Address</h2>
-<button onclick="getIP()">Get IP</button>
+<h2>Get My Current Location</h2>
+<button onclick="getLocation()">Get Location</button>
 
-<p id="ip"></p>
+<p id="output"></p>
 
 <script>
-function getIP() {
-  fetch("https://api.ipify.org?format=json")
-    .then(response => response.json())
-    .then(data => {
-      document.getElementById("ip").innerText =
-        "Your IP Address: " + data.ip;
-    })
-    .catch(() => {
-      document.getElementById("ip").innerText = "Unable to fetch IP ❌";
-    });
+function getLocation() {
+  const output = document.getElementById("output");
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        output.innerHTML = `
+          Latitude: ${lat} <br>
+          Longitude: ${lon} <br>
+          <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
+            Open in Google Maps
+          </a>
+        `;
+      },
+      function(error) {
+        output.innerHTML = "Location access denied ❌";
+      }
+    );
+  } else {
+    output.innerHTML = "Geolocation not supported ❌";
+  }
 }
 </script>
 
 </body>
 </html>
+
