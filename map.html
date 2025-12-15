@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Street Map with Address</title>
+  <title>Firebase Locations on Map</title>
 
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     #map {
@@ -15,67 +12,114 @@
       width: 100%;
       margin-top: 10px;
     }
+    #googleMap {
+      display: none;
+      width: 100%;
+      height: 450px;
+      border: none;
+      margin-top: 10px;
+    }
+    button {
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
 
-<h2>Show Street, Houses & Address</h2>
+<h2>Firebase Stored Locations</h2>
 
-Latitude:
-<input type="text" id="lat" placeholder="21.2514"><br><br>
-
-Longitude:
-<input type="text" id="lng" placeholder="81.6296"><br><br>
-
-<button onclick="showMap()">Show on Map</button>
-
-<p id="address"></p>
+<button onclick="showOSM()">🌍 OpenStreetMap</button>
+<button onclick="showGoogle()">🗺 Google Maps</button>
 
 <div id="map"></div>
+<iframe id="googleMap"></iframe>
+
+<p id="info"></p>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+  // 🔹 Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
+    authDomain: "chat-a9021.firebaseapp.com",
+    databaseURL: "https://chat-a9021-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "chat-a9021",
+    storageBucket: "chat-a9021.firebasestorage.app",
+    messagingSenderId: "910705138024",
+    appId: "1:910705138024:web:8bbf2dd7840b6e28015edd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
   let map;
+  let lastLat = 21.2514;
+  let lastLng = 81.6296;
 
-  function showMap() {
-    const lat = parseFloat(document.getElementById("lat").value);
-    const lng = parseFloat(document.getElementById("lng").value);
+  // 🌍 Load OpenStreetMap
+  function loadOSM(locations) {
+    if (map) map.remove();
 
-    if (isNaN(lat) || isNaN(lng)) {
-      alert("Enter valid latitude & longitude");
+    map = L.map("map").setView([lastLat, lastLng], 14);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    locations.forEach(loc => {
+      L.marker([loc.lat, loc.lng]).addTo(map)
+        .bindPopup(`
+          <b>Location</b><br>
+          Lat: ${loc.lat}<br>
+          Lng: ${loc.lng}<br>
+          Accuracy: ${loc.accuracy}m
+        `);
+    });
+  }
+
+  // 🔥 Fetch Firebase data
+  get(ref(db, "user_locations")).then(snapshot => {
+    if (!snapshot.exists()) {
+      document.getElementById("info").innerText = "No data found";
       return;
     }
 
-    if (map) map.remove();
+    const locations = [];
+    snapshot.forEach(child => {
+      const d = child.val();
+      if (d.lat && d.lng) {
+        locations.push(d);
+        lastLat = d.lat;
+        lastLng = d.lng;
+      }
+    });
 
-    // Create map (street level zoom)
-    map = L.map("map").setView([lat, lng], 18);
+    loadOSM(locations);
 
-    // OpenStreetMap tiles (shows streets, houses, shops)
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors"
-    }).addTo(map);
+    // Prepare Google map
+    document.getElementById("googleMap").src =
+      `https://www.google.com/maps?q=${lastLat},${lastLng}&z=15&output=embed`;
 
-    // Marker
-    L.marker([lat, lng]).addTo(map)
-      .bindPopup("Selected Location")
-      .openPopup();
+  }).catch(err => {
+    console.error(err);
+    document.getElementById("info").innerText = "Firebase read error ❌";
+  });
 
-    // Reverse geocoding (get address)
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("address").innerHTML = `
-          <b>Address:</b><br>
-          ${data.display_name}
-        `;
-      })
-      .catch(() => {
-        document.getElementById("address").innerText = "Address not found";
-      });
-  }
+  // 🔁 Toggle functions
+  window.showOSM = () => {
+    document.getElementById("map").style.display = "block";
+    document.getElementById("googleMap").style.display = "none";
+  };
+
+  window.showGoogle = () => {
+    document.getElementById("map").style.display = "none";
+    document.getElementById("googleMap").style.display = "block";
+  };
 </script>
 
 </body>
