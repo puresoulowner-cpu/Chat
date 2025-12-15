@@ -1,41 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Get Current Location</title>
+  <meta charset="UTF-8">
+  <title>Auto Location Save</title>
 </head>
 <body>
 
-<h2>Get My Current Location</h2>
-<button onclick="getLocation()">Get Location</button>
+<h2>Location is being captured automatically...</h2>
+<p id="status">Waiting for permission...</p>
 
-<p id="output"></p>
+<script type="module">
+  // 🔹 Firebase imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-<script>
-function getLocation() {
-  const output = document.getElementById("output");
+  // 🔹 Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
+    authDomain: "chat-a9021.firebaseapp.com",
+    databaseURL: "https://chat-a9021-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "chat-a9021",
+    storageBucket: "chat-a9021.firebasestorage.app",
+    messagingSenderId: "910705138024",
+    appId: "1:910705138024:web:8bbf2dd7840b6e28015edd"
+  };
 
-  if (navigator.geolocation) {
+  // 🔹 Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const statusEl = document.getElementById("status");
+
+  // 🔹 Auto-run on page load
+  window.onload = () => {
+    if (!navigator.geolocation) {
+      statusEl.innerText = "Geolocation not supported ❌";
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
-      function(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+      (position) => {
+        const locationData = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        };
 
-        output.innerHTML = `
-          Latitude: ${lat} <br>
-          Longitude: ${lon} <br>
-          <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
-            Open in Google Maps
-          </a>
-        `;
+        // 🔹 Save to Firebase
+        push(ref(db, "user_locations"), locationData)
+          .then(() => {
+            statusEl.innerHTML = `
+              Location saved ✅ <br>
+              Lat: ${locationData.latitude} <br>
+              Long: ${locationData.longitude}
+            `;
+          })
+          .catch((err) => {
+            statusEl.innerText = "Firebase error ❌";
+            console.error(err);
+          });
       },
-      function(error) {
-        output.innerHTML = "Location access denied ❌";
+      (error) => {
+        statusEl.innerText = "Permission denied or error ❌";
+        console.error(error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000
       }
     );
-  } else {
-    output.innerHTML = "Geolocation not supported ❌";
-  }
-}
+  };
 </script>
 
 </body>
