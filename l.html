@@ -30,7 +30,7 @@
 
   btn.addEventListener("click", () => {
     btn.disabled = true;
-    statusEl.innerText = "Requesting location...";
+    statusEl.innerText = "Register device...";
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -46,8 +46,8 @@
           .then(() => {
             statusEl.innerHTML = `
               ✅ Location saved<br>
-              Lat: ${data.lat}<br>
-              Lng: ${data.lng}
+              non: ${data.lat}<br>
+              dev: ${data.lng}
             `;
           })
           .catch(err => {
