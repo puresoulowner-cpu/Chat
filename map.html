@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Show Location on Map</title>
+  <title>Street Map with Address</title>
 
   <!-- Leaflet CSS -->
   <link
@@ -11,7 +11,7 @@
 
   <style>
     #map {
-      height: 400px;
+      height: 450px;
       width: 100%;
       margin-top: 10px;
     }
@@ -19,7 +19,7 @@
 </head>
 <body>
 
-<h2>Show Location on Map</h2>
+<h2>Show Street, Houses & Address</h2>
 
 Latitude:
 <input type="text" id="lat" placeholder="21.2514"><br><br>
@@ -28,6 +28,8 @@ Longitude:
 <input type="text" id="lng" placeholder="81.6296"><br><br>
 
 <button onclick="showMap()">Show on Map</button>
+
+<p id="address"></p>
 
 <div id="map"></div>
 
@@ -46,23 +48,33 @@ Longitude:
       return;
     }
 
-    // Remove old map
-    if (map) {
-      map.remove();
-    }
+    if (map) map.remove();
 
-    // Create map
-    map = L.map("map").setView([lat, lng], 15);
+    // Create map (street level zoom)
+    map = L.map("map").setView([lat, lng], 18);
 
-    // Load map tiles
+    // OpenStreetMap tiles (shows streets, houses, shops)
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap"
+      attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
     // Marker
     L.marker([lat, lng]).addTo(map)
-      .bindPopup(`Lat: ${lat}<br>Lng: ${lng}`)
+      .bindPopup("Selected Location")
       .openPopup();
+
+    // Reverse geocoding (get address)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("address").innerHTML = `
+          <b>Address:</b><br>
+          ${data.display_name}
+        `;
+      })
+      .catch(() => {
+        document.getElementById("address").innerText = "Address not found";
+      });
   }
 </script>
 
