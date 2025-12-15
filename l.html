@@ -1,42 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Get Current Location</title>
+  <title>IP Location</title>
 </head>
 <body>
 
-<h2>Get My Current Location</h2>
-<button onclick="getLocation()">Get Location</button>
+<h2>User Location (Without Permission)</h2>
+<button onclick="getIPLocation()">Check Location</button>
 
-<p id="output"></p>
+<p id="result"></p>
 
 <script>
-function getLocation() {
-  const output = document.getElementById("output");
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      function(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        output.innerHTML = `
-          Latitude: ${lat} <br>
-          Longitude: ${lon} <br>
-          <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">
-            Open in Google Maps
-          </a>
-        `;
-      },
-      function(error) {
-        output.innerHTML = "Location access denied ❌";
-      }
-    );
-  } else {
-    output.innerHTML = "Geolocation not supported ❌";
-  }
+function getIPLocation() {
+  fetch("https://ipapi.co/json/")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("result").innerHTML = `
+        IP: ${data.ip} <br>
+        City: ${data.city} <br>
+        Region: ${data.region} <br>
+        Country: ${data.country_name} <br>
+        Latitude: ${data.latitude} <br>
+        Longitude: ${data.longitude}
+      `;
+    })
+    .catch(err => {
+      document.getElementById("result").innerText = "Failed to get location";
+    });
 }
 </script>
 
 </body>
 </html>
+
