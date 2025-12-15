@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Firebase Locations on Map</title>
+  <title>Map + Firebase Viewer</title>
 
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     #map {
@@ -13,28 +14,37 @@
       margin-top: 10px;
     }
     #googleMap {
-      display: none;
       width: 100%;
       height: 450px;
       border: none;
+      display: none;
       margin-top: 10px;
     }
-    button {
-      margin-right: 10px;
+    input, button {
+      margin: 5px;
     }
   </style>
 </head>
 <body>
 
-<h2>Firebase Stored Locations</h2>
+<h2>Manual Location</h2>
+Latitude:
+<input id="lat" placeholder="21.2514">
+Longitude:
+<input id="lng" placeholder="81.6296">
 
-<button onclick="showOSM()">🌍 OpenStreetMap</button>
-<button onclick="showGoogle()">🗺 Google Maps</button>
+<button onclick="showManualOSM()">Show OSM</button>
+<button onclick="showManualGoogle()">Show Google</button>
+
+<hr>
+
+<h2>Firebase Stored Locations</h2>
+<button onclick="loadFirebaseLocations()">Load From Firebase</button>
 
 <div id="map"></div>
 <iframe id="googleMap"></iframe>
 
-<p id="info"></p>
+<p id="status"></p>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -43,7 +53,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-  // 🔹 Firebase Config
+  // 🔹 Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyB97P3HgOUUhTTfDyqZ8_hbp3cQbp3R1Rc",
     authDomain: "chat-a9021.firebaseapp.com",
@@ -58,67 +68,96 @@
   const db = getDatabase(app);
 
   let map;
-  let lastLat = 21.2514;
-  let lastLng = 81.6296;
 
-  // 🌍 Load OpenStreetMap
-  function loadOSM(locations) {
+  function initMap(lat, lng, zoom = 15) {
     if (map) map.remove();
 
-    map = L.map("map").setView([lastLat, lastLng], 14);
-
+    map = L.map("map").setView([lat, lng], zoom);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap"
     }).addTo(map);
-
-    locations.forEach(loc => {
-      L.marker([loc.lat, loc.lng]).addTo(map)
-        .bindPopup(`
-          <b>Location</b><br>
-          Lat: ${loc.lat}<br>
-          Lng: ${loc.lng}<br>
-          Accuracy: ${loc.accuracy}m
-        `);
-    });
   }
 
-  // 🔥 Fetch Firebase data
-  get(ref(db, "user_locations")).then(snapshot => {
-    if (!snapshot.exists()) {
-      document.getElementById("info").innerText = "No data found";
+  // 🌍 Manual OpenStreetMap
+  window.showManualOSM = () => {
+    const lat = parseFloat(document.getElementById("lat").value);
+    const lng = parseFloat(document.getElementById("lng").value);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      alert("Enter valid latitude & longitude");
       return;
     }
 
-    const locations = [];
-    snapshot.forEach(child => {
-      const d = child.val();
-      if (d.lat && d.lng) {
-        locations.push(d);
-        lastLat = d.lat;
-        lastLng = d.lng;
-      }
-    });
-
-    loadOSM(locations);
-
-    // Prepare Google map
-    document.getElementById("googleMap").src =
-      `https://www.google.com/maps?q=${lastLat},${lastLng}&z=15&output=embed`;
-
-  }).catch(err => {
-    console.error(err);
-    document.getElementById("info").innerText = "Firebase read error ❌";
-  });
-
-  // 🔁 Toggle functions
-  window.showOSM = () => {
-    document.getElementById("map").style.display = "block";
     document.getElementById("googleMap").style.display = "none";
+    document.getElementById("map").style.display = "block";
+
+    initMap(lat, lng, 18);
+    L.marker([lat, lng]).addTo(map)
+      .bindPopup("Manual Location")
+      .openPopup();
   };
 
-  window.showGoogle = () => {
+  // 🗺 Manual Google Map
+  window.showManualGoogle = () => {
+    const lat = document.getElementById("lat").value;
+    const lng = document.getElementById("lng").value;
+
+    if (!lat || !lng) {
+      alert("Enter latitude & longitude");
+      return;
+    }
+
     document.getElementById("map").style.display = "none";
-    document.getElementById("googleMap").style.display = "block";
+    const iframe = document.getElementById("googleMap");
+    iframe.style.display = "block";
+    iframe.src = `https://www.google.com/maps?q=${lat},${lng}&z=18&output=embed`;
+  };
+
+  // 🔥 Load Firebase data
+  window.loadFirebaseLocations = () => {
+    document.getElementById("status").innerText = "Loading Firebase data...";
+
+    get(ref(db, "user_locations")).then(snapshot => {
+      if (!snapshot.exists()) {
+        document.getElementById("status").innerText = "No Firebase data found ❌";
+        return;
+      }
+
+      const locations = [];
+      snapshot.forEach(child => {
+        const d = child.val();
+        if (d.lat && d.lng) locations.push(d);
+      });
+
+      if (locations.length === 0) {
+        document.getElementById("status").innerText = "No valid locations ❌";
+        return;
+      }
+
+      const last = locations[locations.length - 1];
+
+      document.getElementById("googleMap").style.display = "none";
+      document.getElementById("map").style.display = "block";
+
+      initMap(last.lat, last.lng, 14);
+
+      locations.forEach(loc => {
+        L.marker([loc.lat, loc.lng]).addTo(map)
+          .bindPopup(`
+            <b>Firebase Location</b><br>
+            Lat: ${loc.lat}<br>
+            Lng: ${loc.lng}<br>
+            Accuracy: ${loc.accuracy || "N/A"}m
+          `);
+      });
+
+      document.getElementById("status").innerText =
+        `Loaded ${locations.length} locations from Firebase ✅`;
+
+    }).catch(err => {
+      console.error(err);
+      document.getElementById("status").innerText = "Firebase read error ❌";
+    });
   };
 </script>
 
