@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Show Location on Map</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Show Location on Map</h2>
+
+Latitude:
+<input type="text" id="lat" placeholder="21.2514"><br><br>
+
+Longitude:
+<input type="text" id="lng" placeholder="81.6296"><br><br>
+
+<button onclick="showMap()">Show on Map</button>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  let map;
+
+  function showMap() {
+    const lat = parseFloat(document.getElementById("lat").value);
+    const lng = parseFloat(document.getElementById("lng").value);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      alert("Enter valid latitude & longitude");
+      return;
+    }
+
+    // Remove old map
+    if (map) {
+      map.remove();
+    }
+
+    // Create map
+    map = L.map("map").setView([lat, lng], 15);
+
+    // Load map tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    // Marker
+    L.marker([lat, lng]).addTo(map)
+      .bindPopup(`Lat: ${lat}<br>Lng: ${lng}`)
+      .openPopup();
+  }
+</script>
+
+</body>
+</html>
