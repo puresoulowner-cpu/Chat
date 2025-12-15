@@ -1,35 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>IP Location</title>
+  <title>Get My IP</title>
 </head>
 <body>
 
-<h2>User Location (Without Permission)</h2>
-<button onclick="getIPLocation()">Check Location</button>
+<h2>My Public IP Address</h2>
+<button onclick="getIP()">Get IP</button>
 
-<p id="result"></p>
+<p id="ip"></p>
 
 <script>
-function getIPLocation() {
-  fetch("https://ipapi.co/json/")
-    .then(res => res.json())
+function getIP() {
+  fetch("https://api.ipify.org?format=json")
+    .then(response => response.json())
     .then(data => {
-      document.getElementById("result").innerHTML = `
-        IP: ${data.ip} <br>
-        City: ${data.city} <br>
-        Region: ${data.region} <br>
-        Country: ${data.country_name} <br>
-        Latitude: ${data.latitude} <br>
-        Longitude: ${data.longitude}
-      `;
+      document.getElementById("ip").innerText =
+        "Your IP Address: " + data.ip;
     })
-    .catch(err => {
-      document.getElementById("result").innerText = "Failed to get location";
+    .catch(() => {
+      document.getElementById("ip").innerText = "Unable to fetch IP ❌";
     });
 }
 </script>
 
 </body>
 </html>
-
